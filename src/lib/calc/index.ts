@@ -6,7 +6,7 @@
  * בלי לחשב שום דבר בעצמו.
  */
 
-import type { Assumptions, PropertyInput } from '@/types/property';
+import type { Assumptions, IsoDate, PropertyInput } from '@/types/property';
 import { buildSaleSchedule, type DeductibleLine, type SaleAtYear } from './capital-gains';
 import { buildCapitalTimeline, singleDateTimeline, type CapitalTimeline } from './capital-timeline';
 import { calcCashflow, type CashflowInput, type CashflowResult } from './cashflow';
@@ -14,6 +14,7 @@ import { calcMetrics, calcUpfrontEquity, solveBreakEvenRent, type MetricsResult,
 import { buildMortgage, type MortgageResult } from './mortgage';
 import { CalcInputError } from './money';
 import { calcPaymentSchedule, type PaymentScheduleResult } from './payment-schedule';
+import { SHEVACH_MIN_HOLDING_MONTHS } from './tax-data';
 import { runScenarios, yearEndBalances, type ScenarioRun } from './projection';
 import { calcPurchaseTax, type PurchaseTaxResult } from './purchase-tax';
 import { compareRentalTaxTracks, type RentalTaxComparison } from './rental-tax';
@@ -230,12 +231,17 @@ export function analyze(input: PropertyInput, assumptions: Assumptions): Analysi
     mortgageStartDate:
       capitalTimeline.outflows.find((o) => o.source === 'mortgage')?.date ??
       input.analysisDate,
-    years: scenarios.central.years.map((y) => ({
-      year: y.year,
-      propertyValue: y.propertyValue,
-      mortgageBalance: y.mortgageBalance,
-      cumulativeNetCashflow: y.cumulativeNetCashflow,
-    })),
+    years: withExemptionPoint(
+      scenarios.central.years.map((y) => ({
+        year: y.year,
+        propertyValue: y.propertyValue,
+        mortgageBalance: y.mortgageBalance,
+        cumulativeNetCashflow: y.cumulativeNetCashflow,
+      })),
+      input.analysisDate,
+      input.paymentSchedule?.occupancyDate ?? input.analysisDate,
+      input.tax.isSingleApartment,
+    ),
   });
 
   return {
@@ -253,4 +259,73 @@ export function analyze(input: PropertyInput, assumptions: Assumptions): Analysi
     capitalTimeline,
     ...(paymentSchedule ? { paymentSchedule } : {}),
   };
+}
+
+/**
+ * מוסיף לטבלת המכירה שורה בתאריך שבו הפטור ממס שבח נכנס לתוקף.
+ *
+ * **למה זה נחוץ:** ההרצה מייצרת שורות שנתיות בלבד. הפטור נכנס 18 חודשים
+ * מהאכלוס, כלומר בין שנה 1 לשנה 2. בלי השורה הזו הכלי מציג את שנה 2
+ * ומחלק את התשואה ב-2 שנים במקום ב-1.5 - והמשקיע רואה תשואה שנתית
+ * נמוכה מהאמיתית, בנקודה שהיא בדיוק זו שמעניינת אותו.
+ *
+ * הערכים בנקודה מחושבים בהשמה לינארית בין שתי השנים הסמוכות. זו קירוב,
+ * אבל הוא עקבי עם ההנחות של המשתמש - שגם הן לינאריות בתוך השנה.
+ *
+ * פונקציה טהורה. כל התאריכים מגיעים כפרמטר.
+ */
+function withExemptionPoint<
+  T extends {
+    year: number;
+    propertyValue: number;
+    mortgageBalance: number;
+    cumulativeNetCashflow: number;
+  },
+>(
+  years: readonly T[],
+  purchaseDate: IsoDate,
+  occupancyDate: IsoDate,
+  isSingleApartment: boolean,
+): (T & { saleDate?: string; label?: string })[] {
+  const rows = [...years] as (T & { saleDate?: string; label?: string })[];
+  // בדירה שאינה ראשונה אין פטור, ולכן אין נקודת מפתח להוסיף.
+  if (!isSingleApartment || rows.length < 2) return rows;
+
+  const occ = new Date(occupancyDate);
+  const purchase = new Date(purchaseDate);
+  if (Number.isNaN(occ.getTime()) || Number.isNaN(purchase.getTime())) return rows;
+
+  const exempt = new Date(occ);
+  exempt.setUTCMonth(exempt.getUTCMonth() + SHEVACH_MIN_HOLDING_MONTHS.value);
+
+  // כמה שנים מיום הרכישה נופלת נקודת הפטור.
+  const yearsFromPurchase =
+    (exempt.getTime() - purchase.getTime()) / (365.25 * 24 * 3600 * 1000);
+
+  const first = rows[0];
+  const last = rows[rows.length - 1];
+  if (!first || !last) return rows;
+  // מחוץ לטווח הבדיקה, או נופלת בדיוק על שנה קיימת.
+  if (yearsFromPurchase <= first.year || yearsFromPurchase >= last.year) return rows;
+  if (rows.some((r) => Math.abs(r.year - yearsFromPurchase) < 0.02)) return rows;
+
+  const after = rows.findIndex((r) => r.year > yearsFromPurchase);
+  const hi = rows[after];
+  const lo = rows[after - 1];
+  if (!hi || !lo) return rows;
+
+  const t = (yearsFromPurchase - lo.year) / (hi.year - lo.year);
+  const lerp = (a: number, b: number) => a + (b - a) * t;
+
+  rows.splice(after, 0, {
+    ...lo,
+    year: Math.round(yearsFromPurchase * 100) / 100,
+    propertyValue: lerp(lo.propertyValue, hi.propertyValue),
+    mortgageBalance: lerp(lo.mortgageBalance, hi.mortgageBalance),
+    cumulativeNetCashflow: lerp(lo.cumulativeNetCashflow, hi.cumulativeNetCashflow),
+    saleDate: exempt.toISOString().slice(0, 10),
+    label: 'כניסת הפטור ממס שבח',
+  });
+
+  return rows;
 }

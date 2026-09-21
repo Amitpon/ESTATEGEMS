@@ -100,6 +100,7 @@ function AmountField({
       label={label}
       value={value}
       onChange={onChange}
+      unit="amount"
       mode={mode}
       onModeChange={setMode}
       base={base}
@@ -133,6 +134,7 @@ export interface AssumptionsPanelValues {
   managementPct: number
   maintenancePct: number
   // קבלן
+  hasPaymentSchedule: boolean
   isContractorPurchase: boolean
   occupancyDate: string
   stages: PaymentStage[]
@@ -163,48 +165,77 @@ export function AssumptionsPanel({
   return (
     <div className="space-y-3">
       <Section
-        title="לוח תשלומים ואכלוס"
-        hint="רכישה מקבלן - מתי כל שקל יוצא מהכיס"
-        defaultOpen={values.isContractorPurchase}
+        title="חלוקת תשלומים"
+        hint="מתי כל שקל יוצא מהכיס"
+        defaultOpen={values.hasPaymentSchedule}
       >
+        <p className="text-xs leading-relaxed text-slate-500">
+          גם ביד שנייה התשלום כמעט תמיד מחולק - מקדמה בחתימה והיתרה במסירה.
+          החלוקה קובעת את המכנה של התשואה: מכירה מוקדמת נמדדת מול ההון שהושקע
+          עד אותו תאריך בלבד.
+        </p>
+
         <label className="flex items-center gap-3">
           <input
             type="checkbox"
-            checked={values.isContractorPurchase}
-            onChange={(e) => set('isContractorPurchase')(e.target.checked)}
+            checked={values.hasPaymentSchedule}
+            onChange={(e) => set('hasPaymentSchedule')(e.target.checked)}
             className="size-5 rounded border-slate-300"
           />
-          <span className="text-sm font-medium">זו רכישה מקבלן, דירה על הנייר</span>
+          <span className="text-sm font-medium">התשלום מחולק לכמה תאריכים</span>
         </label>
 
-        {values.isContractorPurchase && (
+        {values.hasPaymentSchedule && (
           <>
+            {/* דירה על הנייר אינה תנאי לפיצול תשלומים, אלא תת-מקרה שלו.
+                היא מוסיפה שני דברים: תאריך אכלוס שממנו נספרים 18 החודשים
+                לפטור ממס שבח, והצמדה למדד תשומות הבנייה. */}
+            <label className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={values.isContractorPurchase}
+                onChange={(e) => set('isContractorPurchase')(e.target.checked)}
+                className="size-5 rounded border-slate-300"
+              />
+              <span className="text-sm font-medium">
+                זו דירה על הנייר, רכישה מקבלן
+              </span>
+            </label>
+
             <PaymentScheduleEditor
               price={price}
               stages={values.stages}
               onStagesChange={set('stages')}
+              isOffPlan={values.isContractorPurchase}
               occupancyDate={values.occupancyDate}
               onOccupancyDateChange={set('occupancyDate')}
               costAmounts={costAmounts}
               stageDates={values.stageDates}
               onStageDatesChange={set('stageDates')}
             />
-            <div className="border-t border-slate-200 pt-3">
-              <Slider
-                label="שינוי מדד תשומות הבנייה"
-                valueDisplay={formatPercentDirect(values.indexChangePct)}
-                min={0}
-                max={10}
-                step={0.5}
-                value={values.indexChangePct}
-                onChange={(e) => set('indexChangePct')(Number(e.target.value))}
-              />
-              <p className="mt-1 text-xs text-slate-500">
-                תשלומים לקבלן צמודים למדד הזה.{' '}
-                <span dir="ltr" className="tabular-nums">+3.5%</span> בשנה האחרונה
-                לפי למ״ס, אוגוסט 2026. זו הנחה שלך, לא תחזית.
-              </p>
-            </div>
+
+            {values.isContractorPurchase && (
+              <div className="border-t border-slate-200 pt-3">
+                <Slider
+                  label="שינוי מדד תשומות הבנייה"
+                  valueDisplay={formatPercentDirect(values.indexChangePct)}
+                  min={0}
+                  max={10}
+                  step={0.5}
+                  value={values.indexChangePct}
+                  onChange={(e) => set('indexChangePct')(Number(e.target.value))}
+                />
+                <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                  תשלומים לקבלן צמודים למדד הזה. זו הנחה שלך, לא תחזית.
+                  <br />
+                  <span className="text-slate-400">
+                    לשם השוואה, הנתון ההיסטורי:{' '}
+                    <span dir="ltr" className="tabular-nums">+3.5%</span> בשנה
+                    האחרונה לפי למ״ס, אוגוסט 2026.
+                  </span>
+                </p>
+              </div>
+            )}
           </>
         )}
       </Section>
@@ -399,52 +430,6 @@ export function AssumptionsPanel({
         </p>
       </Section>
 
-      <Section
-        title="לוח תשלומים ואכלוס"
-        hint="רכישה מקבלן - מתי כל שקל יוצא מהכיס"
-        defaultOpen={values.isContractorPurchase}
-      >
-        <label className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            checked={values.isContractorPurchase}
-            onChange={(e) => set('isContractorPurchase')(e.target.checked)}
-            className="size-5 rounded border-slate-300"
-          />
-          <span className="text-sm font-medium">זו רכישה מקבלן, דירה על הנייר</span>
-        </label>
-
-        {values.isContractorPurchase && (
-          <>
-            <PaymentScheduleEditor
-              price={price}
-              stages={values.stages}
-              onStagesChange={set('stages')}
-              occupancyDate={values.occupancyDate}
-              onOccupancyDateChange={set('occupancyDate')}
-              costAmounts={costAmounts}
-              stageDates={values.stageDates}
-              onStageDatesChange={set('stageDates')}
-            />
-            <div className="border-t border-slate-200 pt-3">
-              <Slider
-                label="שינוי מדד תשומות הבנייה"
-                valueDisplay={formatPercentDirect(values.indexChangePct)}
-                min={0}
-                max={10}
-                step={0.5}
-                value={values.indexChangePct}
-                onChange={(e) => set('indexChangePct')(Number(e.target.value))}
-              />
-              <p className="mt-1 text-xs text-slate-500">
-                תשלומים לקבלן צמודים למדד הזה.{' '}
-                <span dir="ltr" className="tabular-nums">+3.5%</span> בשנה האחרונה
-                לפי למ״ס, אוגוסט 2026. זו הנחה שלך, לא תחזית.
-              </p>
-            </div>
-          </>
-        )}
-      </Section>
 
       <p className="px-1 text-xs leading-relaxed text-slate-500">
         טווחי השוק המוצגים כאן הם אינדיקציה בלבד ורובם מבוססים על אתרי שיווק של

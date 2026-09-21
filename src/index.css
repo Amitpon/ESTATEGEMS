@@ -162,20 +162,47 @@ body {
    html2canvas שבורה ברינדור עברית, לכן print CSS.
    ───────────────────────────────────────────── */
 @media print {
-  /* הסתרת אלמנטי ניווט */
+  /* המסך מחולק לשני שלבים, והשלב הלא-פעיל נושא `hidden` של Tailwind.
+     בלי הביטול הזה חצי מהדוח פשוט לא יודפס. */
+  [data-print-section] {
+    display: block !important;
+  }
+
+  /* ניווט, כפתורים ועוזר ה-AI אינם חלק מהדוח. */
   [data-no-print],
   nav,
+  button,
   .bottom-nav {
     display: none !important;
+  }
+
+  /* שדות הקלט מודפסים כערך קריא ולא כפקד. */
+  input[type='range'] {
+    display: none !important;
+  }
+  input,
+  select {
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+    -webkit-appearance: none;
+    appearance: none;
   }
 
   body {
     background: white;
     color: black;
-    font-size: 12pt;
+    font-size: 10pt;
   }
 
-  /* שמור צבעים סמנטיים בהדפסה */
+  /* פריסת שני הטורים מתמוטטת לעמוד אחד רציף. */
+  main {
+    display: block !important;
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  /* צבעים סמנטיים נשמרים, אחרת רווח והפסד נראים זהים. */
   [data-positive] {
     color: #1a5e34 !important;
   }
@@ -186,13 +213,30 @@ body {
     color: #9b0000 !important;
   }
 
-  /* מניעת שבירת עמוד בתוך כרטיסיה */
   .card,
   [data-metric-section] {
     break-inside: avoid;
   }
 
-  /* כותרת בכל עמוד */
+  /* טבלאות ארוכות: כותרת חוזרת בכל עמוד. */
+  thead {
+    display: table-header-group;
+  }
+  tr {
+    break-inside: avoid;
+  }
+
+  /* גלילה אופקית חסרת משמעות בנייר. */
+  .overflow-x-auto {
+    overflow: visible !important;
+  }
+
+  a[href]::after {
+    content: ' (' attr(href) ')';
+    font-size: 8pt;
+    color: #555;
+  }
+
   @page {
     margin: 15mm;
   }

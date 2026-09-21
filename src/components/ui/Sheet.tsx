@@ -78,7 +78,7 @@ export function Sheet({
         aria-hidden="true"
         onClick={onClose}
         className={cn(
-          "fixed inset-0 z-40 bg-black/40 transition-opacity duration-300",
+          "fixed inset-0 z-30 bg-black/40 transition-opacity duration-300",
           open ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
       />
@@ -92,7 +92,7 @@ export function Sheet({
         tabIndex={-1}
         onKeyDown={handlePanelKey}
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50",
+          "fixed inset-x-0 bottom-0 z-40",
           "rounded-t-[var(--radius-lg)]",
           "bg-[var(--color-card)] border-t border-[var(--color-border)]",
           "overflow-y-auto",

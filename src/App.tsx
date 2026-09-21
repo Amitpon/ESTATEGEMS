@@ -1,13 +1,17 @@
 import { useMemo, useState } from 'react'
-import { analyze, defaultAcquisitionCosts, defaultAssumptions, defaultOperatingExpenses, DEFAULT_VACANCY_PCT } from '@/lib/calc'
-import type { PropertyInput } from '@/types/property'
+import { analyze, findKeyExitPoint, defaultAcquisitionCosts, defaultAssumptions, defaultOperatingExpenses, DEFAULT_VACANCY_PCT } from '@/lib/calc'
+import type { AmortizationKind, PropertyInput } from '@/types/property'
 import { formatCompactILS, formatILS, formatPercentDirect } from '@/lib/format'
-import { HeroMetric, getCashFlowState } from '@/components/HeroMetric'
+import { ExitPointHero } from '@/components/ExitPointHero'
 import { Card } from '@/components/ui/Card'
 import { getBoiRateTrend, getCurrentBoiRate, suggestMortgageRate, INVESTMENT_LTV_CAP_PCT } from '@/services/rates'
 import { ShimshonChat } from '@/components/ShimshonChat'
 import { SaleSchedule } from '@/components/SaleSchedule'
 import { CashflowTimeline } from '@/components/CashflowTimeline'
+import { AmortizationTable } from '@/components/AmortizationTable'
+import { Disclosure } from '@/components/ui/Disclosure'
+import { ReportInsights } from '@/components/ReportInsights'
+import { printReport } from '@/lib/print'
 import { AssumptionsPanel, type AssumptionsPanelValues } from '@/components/AssumptionsPanel'
 import { buildShimshonContext } from '@/services/shimshon'
 
@@ -106,6 +110,12 @@ export default function App() {
   // וזכאות לפטור ממס שבח.
   const [isSingleApartment, setIsSingleApartment] = useState(true)
   // כל ההנחות והעלויות במקום אחד. עיקרון 3 - אין קבוע נסתר בקוד.
+  // במובייל מוצג שלב אחד בכל רגע. מ-sm ומעלה שני הטורים גלויים יחד
+  // וה-state הזה חסר משמעות.
+  const [step, setStep] = useState<'input' | 'results'>('input')
+  // שיטת הסילוקין. המנוע תמך בשתיהן מההתחלה, פשוט לא היה בורר.
+  const [amortization, setAmortization] = useState<AmortizationKind>('spitzer')
+
   const [panel, setPanel] = useState<AssumptionsPanelValues>({
     appreciationPct: 3,
     rentGrowthPct: 2,
@@ -124,6 +134,7 @@ export default function App() {
     insurance: 100,
     managementPct: 8,
     maintenancePct: 8,
+    hasPaymentSchedule: false,
     isContractorPurchase: false,
     occupancyDate: '',
     // לוח ברירת מחדל טיפוסי לעסקת קבלן: מקדמה, שלב ביניים, ויתרה באכלוס.
@@ -167,7 +178,7 @@ export default function App() {
                     principal: loanAmount,
                     annualRatePct,
                     termMonths: termYears * 12,
-                    amortization: 'spitzer',
+                    amortization,
                     linkage: 'fixedUnlinked',
                   },
                 ]
@@ -199,13 +210,21 @@ export default function App() {
         // תאריך האכלוס נדרש למס שבח - 18 החודשים נספרים ממנו בדירה על הנייר.
         // לוח התשלומים מופעל רק כשסכום האחוזים הוא בדיוק 100. אחרת המנוע
         // זורק, והממשק כבר מציג על כך אזהרה בעורך.
-        ...(panel.isContractorPurchase &&
+        ...(panel.hasPaymentSchedule &&
         Math.abs(panel.stages.reduce((a, st) => a + st.percentOfPrice, 0) - 100) < 0.01
           ? {
               paymentSchedule: {
-                ...(panel.occupancyDate ? { occupancyDate: panel.occupancyDate } : {}),
-                indexationMode: 'on' as const,
-                assumedIndexChangePct: panel.indexChangePct,
+                // אכלוס והצמדה למדד תשומות הבנייה קיימים רק בדירה על הנייר.
+                // ביד שנייה מפוצלת אין טופס 4 ואין הצמדה.
+                ...(panel.isContractorPurchase && panel.occupancyDate
+                  ? { occupancyDate: panel.occupancyDate }
+                  : {}),
+                indexationMode: panel.isContractorPurchase
+                  ? ('on' as const)
+                  : ('off' as const),
+                assumedIndexChangePct: panel.isContractorPurchase
+                  ? panel.indexChangePct
+                  : 0,
                 stages: panel.stages,
               },
             }
@@ -248,104 +267,36 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-4 px-4 py-4">
-        {!result.ok ? (
-          <Card className="border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">{result.message}</Card>
-        ) : (
-          <>
-            <HeroMetric
-              label="תזרים חודשי נקי"
-              value={formatILS(result.data.metrics.netMonthlyCashflow.value)}
-              state={getCashFlowState(result.data.metrics.netMonthlyCashflow.value)}
-              context="שכר דירה פחות הוצאות, משכנתא ומס, לפי הנתונים שהזנת"
-            />
+      {/* ניווט השלבים. במובייל מוצג שלב אחד בכל רגע - הכרעת בעל המוצר,
+          כדי שלא צריך לגלול מאות פיקסלים כדי לראות תוצאה. מ-sm ומעלה
+          שני הטורים גלויים יחד והניווט מוסתר. */}
+      <div data-no-print className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur sm:hidden">
+        <div className="mx-auto flex max-w-3xl gap-1 px-4 py-2">
+          {(
+            [
+              ['input', 'הנתונים שלי'],
+              ['results', 'התוצאות'],
+            ] as const
+          ).map(([v, label]) => (
+            <button
+              key={v}
+              type="button"
+              aria-current={step === v ? 'step' : undefined}
+              onClick={() => setStep(v)}
+              className={
+                step === v
+                  ? 'flex-1 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white'
+                  : 'flex-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-600'
+              }
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-            {/* כיסוי ההחזר - הבקשה של בעל המוצר: כמה מההחזר השכירות מחזירה.
-                מוצג בשורה נפרדת כי זו השאלה הראשונה שמשקיע שואל. */}
-            {result.data.cashflow.mortgagePayment.monthly > 0 && (
-              <Card className="p-3">
-                <div className="flex items-baseline justify-between gap-3">
-                  <div>
-                    <div className="text-xs text-slate-500">כיסוי ההחזר מהשכירות</div>
-                    <div className="mt-0.5 text-xs text-slate-400">
-                      שכר דירה אחרי אי-אכלוס, חלקי ההחזר החודשי
-                    </div>
-                  </div>
-                  <div
-                    dir="ltr"
-                    className={`text-2xl font-semibold tabular-nums ${
-                      result.data.metrics.mortgageCoveragePct.value >= 100
-                        ? 'text-emerald-700'
-                        : 'text-amber-700'
-                    }`}
-                  >
-                    {formatPercentDirect(result.data.metrics.mortgageCoveragePct.value)}
-                  </div>
-                </div>
-                <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
-                  <div
-                    className={`h-full rounded-full ${
-                      result.data.metrics.mortgageCoveragePct.value >= 100
-                        ? 'bg-emerald-500'
-                        : 'bg-amber-500'
-                    }`}
-                    style={{
-                      width: `${Math.min(100, Math.max(0, result.data.metrics.mortgageCoveragePct.value))}%`,
-                    }}
-                  />
-                </div>
-                <p className="mt-2 text-xs text-slate-500">
-                  {result.data.metrics.mortgageCoveragePct.value >= 100
-                    ? 'השכירות מכסה את ההחזר. העודף לפני הוצאות תפעול ומס.'
-                    : `השכירות לא מכסה את ההחזר. ההפרש ${formatILS(result.data.cashflow.mortgagePayment.monthly - result.data.cashflow.effectiveRent.monthly)} בחודש, לפני הוצאות תפעול ומס.`}
-                </p>
-              </Card>
-            )}
-
-            <div className="grid grid-cols-3 gap-2">
-              <Card className="p-3">
-                <div className="text-xs text-slate-500">תשואה ברוטו</div>
-                <div dir="ltr" className="mt-1 text-start text-lg font-semibold tabular-nums">
-                  {formatPercentDirect(result.data.metrics.grossYieldPct.value)}
-                </div>
-              </Card>
-              <Card className="p-3">
-                <div className="text-xs text-slate-500">תשואה על ההון</div>
-                <div dir="ltr" className="mt-1 text-start text-lg font-semibold tabular-nums">
-                  {formatPercentDirect(result.data.metrics.cashOnCashPct.value)}
-                </div>
-              </Card>
-              <Card className="p-3">
-                <div className="text-xs text-slate-500">דרוש ביום 1</div>
-                <div dir="ltr" className="mt-1 text-start text-lg font-semibold tabular-nums">
-                  {formatCompactILS(result.data.equity.total)}
-                </div>
-              </Card>
-            </div>
-          </>
-        )}
-
-        <Card className="p-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 className="text-base font-semibold">ריבית בנק ישראל</h2>
-            <span dir="ltr" className="text-xl font-bold tabular-nums text-indigo-700">
-              {boiRate.rate}%
-            </span>
-          </div>
-          {trend ? (
-            <>
-              <p className="mt-1 text-xs leading-relaxed text-slate-600">{trend.summary}</p>
-              <RateSparkline points={trend.points.map((p) => p.rate)} />
-            </>
-          ) : null}
-          <p className="mt-2 text-xs text-slate-500">
-            נכון ל-{boiRate.asOf}. מקור:{' '}
-            <a href={boiRate.sourceUrl} target="_blank" rel="noreferrer" className="text-indigo-700 underline">
-              {boiRate.sourceName}
-            </a>
-          </p>
-        </Card>
-
+      <main className="mx-auto max-w-6xl gap-6 px-4 py-4 sm:grid sm:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] sm:items-start">
+        <div data-print-section className={`space-y-4 ${step === 'input' ? '' : 'hidden'} sm:block`}>
         <Card className="p-4">
           <h2 className="mb-3 text-base font-semibold">פרטי העסקה</h2>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -397,6 +348,43 @@ export default function App() {
             <NumberField label="תקופת משכנתא" value={termYears} onChange={setTermYears} suffix="שנים" />
           </div>
 
+          <div className="mt-4">
+            <span className="text-sm font-medium text-slate-700">שיטת הסילוקין</span>
+            <div className="mt-1.5 grid gap-2 sm:grid-cols-2">
+              {(
+                [
+                  [
+                    'spitzer',
+                    'שפיצר',
+                    'ההחזר החודשי קבוע. בהתחלה רובו ריבית.',
+                  ],
+                  [
+                    'equalPrincipal',
+                    'קרן שווה',
+                    'ההחזר מתחיל גבוה ויורד. סך הריבית נמוך יותר.',
+                  ],
+                ] as const
+              ).map(([kind, title, note]) => (
+                <button
+                  key={kind}
+                  type="button"
+                  aria-pressed={amortization === kind}
+                  onClick={() => setAmortization(kind)}
+                  className={
+                    amortization === kind
+                      ? 'rounded-xl border-2 border-indigo-600 bg-indigo-50 p-2.5 text-start'
+                      : 'rounded-xl border border-slate-300 p-2.5 text-start hover:border-indigo-300'
+                  }
+                >
+                  <span className="block text-sm font-medium">{title}</span>
+                  <span className="mt-0.5 block text-xs leading-relaxed text-slate-500">
+                    {note}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <label className="mt-4 flex min-h-11 items-center gap-3">
             <input
               type="checkbox"
@@ -407,6 +395,148 @@ export default function App() {
             <span className="text-sm">זו דירתי היחידה</span>
           </label>
         </Card>
+
+        <Card className="p-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="text-base font-semibold">ריבית בנק ישראל</h2>
+            <span dir="ltr" className="text-xl font-bold tabular-nums text-indigo-700">
+              {boiRate.rate}%
+            </span>
+          </div>
+          {trend ? (
+            <>
+              <p className="mt-1 text-xs leading-relaxed text-slate-600">{trend.summary}</p>
+              <RateSparkline points={trend.points.map((p) => p.rate)} />
+            </>
+          ) : null}
+          <p className="mt-2 text-xs text-slate-500">
+            נכון ל-{boiRate.asOf}. מקור:{' '}
+            <a href={boiRate.sourceUrl} target="_blank" rel="noreferrer" className="text-indigo-700 underline">
+              {boiRate.sourceName}
+            </a>
+          </p>
+        </Card>
+
+        <div className="mt-8">
+          <AssumptionsPanel
+            values={panel}
+            onChange={setPanelField}
+            price={price}
+            monthlyRent={monthlyRent}
+            costAmounts={
+              result.ok
+                ? Object.fromEntries(result.data.equity.lines.map((l) => [l.key, l.amount]))
+                : {}
+            }
+          />
+        </div>
+
+          <button
+            type="button"
+            onClick={() => setStep('results')}
+            className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white sm:hidden"
+          >
+            הצג את התוצאות
+          </button>
+        </div>
+
+        <div data-print-section className={`space-y-4 ${step === 'results' ? '' : 'hidden'} sm:block`}>
+        <div data-no-print className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => printReport()}
+              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:border-indigo-400 hover:text-indigo-700"
+            >
+              הדפסה או שמירה כ-PDF
+            </button>
+          </div>
+
+        {!result.ok ? (
+          <Card className="border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">{result.message}</Card>
+        ) : (
+          <>
+            <ExitPointHero
+              monthlyCashflow={result.data.metrics.netMonthlyCashflow.value}
+              exit={findKeyExitPoint(result.data.saleSchedule)}
+            />
+
+            {/* כיסוי ההחזר - הבקשה של בעל המוצר: כמה מההחזר השכירות מחזירה.
+                מוצג בשורה נפרדת כי זו השאלה הראשונה שמשקיע שואל. */}
+            {result.data.cashflow.mortgagePayment.monthly > 0 && (
+              <Card className="p-3">
+                <div className="flex items-baseline justify-between gap-3">
+                  <div>
+                    <div className="text-xs text-slate-500">כיסוי ההחזר מהשכירות</div>
+                    <div className="mt-0.5 text-xs text-slate-400">
+                      שכר דירה אחרי אי-אכלוס, חלקי ההחזר החודשי
+                    </div>
+                  </div>
+                  <div
+                    dir="ltr"
+                    className={`text-2xl font-semibold tabular-nums ${
+                      result.data.metrics.mortgageCoveragePct.value >= 100
+                        ? 'text-emerald-700'
+                        : 'text-amber-700'
+                    }`}
+                  >
+                    {formatPercentDirect(result.data.metrics.mortgageCoveragePct.value)}
+                  </div>
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
+                  <div
+                    className={`h-full rounded-full ${
+                      result.data.metrics.mortgageCoveragePct.value >= 100
+                        ? 'bg-emerald-500'
+                        : 'bg-amber-500'
+                    }`}
+                    style={{
+                      width: `${Math.min(100, Math.max(0, result.data.metrics.mortgageCoveragePct.value))}%`,
+                    }}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-slate-500">
+                  {result.data.metrics.mortgageCoveragePct.value >= 100
+                    ? 'השכירות מכסה את ההחזר. העודף לפני הוצאות תפעול ומס.'
+                    : `השכירות לא מכסה את ההחזר. ההפרש ${formatILS(result.data.cashflow.mortgagePayment.monthly - result.data.cashflow.effectiveRent.monthly)} בחודש, לפני הוצאות תפעול ומס.`}
+                </p>
+              </Card>
+            )}
+
+            <details className="rounded-xl border border-slate-200 bg-white">
+              <summary className="cursor-pointer px-3 py-2.5 text-sm font-medium text-slate-700">
+                מדדי תשואה שנתיים
+              </summary>
+              <div className="border-t border-slate-100 px-3 pb-3 pt-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <div className="text-xs text-slate-500">תשואה ברוטו</div>
+                    <div dir="ltr" className="mt-0.5 text-start text-lg font-semibold tabular-nums">
+                      {formatPercentDirect(result.data.metrics.grossYieldPct.value)}
+                    </div>
+                    <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                      שכר הדירה השנתי חלקי מחיר הנכס. מתעלם ממשכנתא, מהוצאות
+                      וממס - לכן נוח להשוואה בין נכסים, אבל לא אומר כמה נכנס לכיס.
+                    </p>
+                  </div>
+                  <div>
+                    <div className="text-xs text-slate-500">תשואה על ההון</div>
+                    <div dir="ltr" className="mt-0.5 text-start text-lg font-semibold tabular-nums">
+                      {formatPercentDirect(result.data.metrics.cashOnCashPct.value)}
+                    </div>
+                    <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                      התזרים השנתי חלקי ההון שהושקע. מודד את השכירות בלבד, בלי
+                      עליית ערך ובלי מס שבח.
+                    </p>
+                  </div>
+                </div>
+                <p className="mt-3 border-t border-slate-100 pt-2 text-xs leading-relaxed text-slate-500">
+                  שני אלה מודדים <strong>שנה אחת</strong> ואינם כוללים רווח
+                  ממכירה. המספרים בראש המסך הם התמונה המלאה, כולל עליית ערך ומס.
+                </p>
+              </div>
+            </details>
+          </>
+        )}
 
         {result.ok ? (
           <>
@@ -459,40 +589,48 @@ export default function App() {
           </>
         ) : null}
 
+        {result.ok && (
+          <div className="mt-2">
+            <ReportInsights analysis={result.data} />
+          </div>
+        )}
+
+        {result.ok && (
+          <Disclosure
+            title="מתי משלמים ומה"
+            summary={`${result.data.capitalTimeline.outflows.length} תשלומים`}
+          >
+            <CashflowTimeline
+              timeline={result.data.capitalTimeline}
+              {...(panel.hasPaymentSchedule && panel.isContractorPurchase && panel.occupancyDate
+                ? { occupancyDate: panel.occupancyDate }
+                : {})}
+            />
+          </Disclosure>
+        )}
+
+        {result.ok && (
+          <Disclosure
+            title="לוח הסילוקין"
+            summary={`${formatCompactILS(
+              result.data.mortgage.combinedRows.reduce((a, x) => a + x.interest, 0),
+            )} ריבית`}
+          >
+            <AmortizationTable analysis={result.data} />
+          </Disclosure>
+        )}
+
+        {result.ok && (
+          <Disclosure title="רווח בכל נקודת מכירה" defaultOpen>
+            <SaleSchedule analysis={result.data} />
+          </Disclosure>
+        )}
+
         <p className="px-1 text-xs leading-relaxed text-slate-500">
           הכלי מיועד להמחשה בלבד ואינו מהווה ייעוץ מס, ייעוץ משכנתאות או ייעוץ השקעות. נתוני המיסוי
           נכונים למועד העדכון המצוין לצד כל נתון.
         </p>
-        <div className="mt-8">
-          <AssumptionsPanel
-            values={panel}
-            onChange={setPanelField}
-            price={price}
-            monthlyRent={monthlyRent}
-            costAmounts={
-              result.ok
-                ? Object.fromEntries(result.data.equity.lines.map((l) => [l.key, l.amount]))
-                : {}
-            }
-          />
         </div>
-
-        {result.ok && (
-          <div className="mt-8">
-            <CashflowTimeline
-              timeline={result.data.capitalTimeline}
-              {...(panel.isContractorPurchase && panel.occupancyDate
-                ? { occupancyDate: panel.occupancyDate }
-                : {})}
-            />
-          </div>
-        )}
-
-        {result.ok && (
-          <div className="mt-8">
-            <SaleSchedule analysis={result.data} />
-          </div>
-        )}
       </main>
 
       <ShimshonChat context={shimshonContext} />

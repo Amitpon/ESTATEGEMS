@@ -11,3 +11,6 @@ coverage
 # קבצי עבודה זמניים
 eg.js
 eg.css
+
+# פלט בילד של TypeScript, לא שייך לריפו
+*.tsbuildinfo

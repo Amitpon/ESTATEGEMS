@@ -1,5 +1,9 @@
 /**
- * עורך לוח התשלומים לרכישה מקבלן.
+ * עורך חלוקת התשלומים.
+ *
+ * רלוונטי לכל עסקה, לא רק לקבלן: גם ביד שנייה יש מקדמה בחתימה ויתרה
+ * במסירה. `isOffPlan` מוסיף רק את מה שייחודי לדירה על הנייר - תאריך
+ * האכלוס שממנו נספרים 18 החודשים לפטור ממס שבח.
  *
  * זה המסך שקובע **מתי כל שקל יוצא מהכיס**, ולכן הוא קודם לכל השאר:
  * ממנו נגזר המכנה של התשואה בכל נקודת מכירה.
@@ -21,6 +25,52 @@ export const ASSIGNABLE_COSTS = [
   { key: 'mortgageAdvisorFee', label: 'יועץ משכנתאות' },
   { key: 'finishing', label: 'עלויות גמר' },
 ] as const
+
+/**
+ * תבניות נפוצות. הן לא מחייבות - הן חוסכות למשתמש להרכיב מאפס לוח
+ * שגם ככה יצטרך להתאים לחוזה שלו.
+ */
+const TEMPLATES: readonly {
+  readonly id: string
+  readonly label: string
+  readonly offPlanOnly: boolean
+  readonly parts: readonly { pct: number; label: string; months: number }[]
+}[] = [
+  {
+    id: 'second-hand',
+    label: 'יד שנייה רגילה',
+    offPlanOnly: false,
+    parts: [
+      { pct: 15, label: 'מקדמה בחתימה', months: 0 },
+      { pct: 85, label: 'יתרה במסירה', months: 3 },
+    ],
+  },
+  {
+    id: 'contractor-4',
+    label: 'קבלן - 4 תשלומים',
+    offPlanOnly: true,
+    parts: [
+      { pct: 20, label: 'חתימת חוזה', months: 0 },
+      { pct: 30, label: 'גמר שלד', months: 12 },
+      { pct: 30, label: 'גמר טיח', months: 24 },
+      { pct: 20, label: 'מסירת מפתח', months: 36 },
+    ],
+  },
+  {
+    id: 'single',
+    label: 'תשלום אחד',
+    offPlanOnly: false,
+    parts: [{ pct: 100, label: 'תשלום מלא', months: 0 }],
+  },
+]
+
+/** מזיז תאריך במספר חודשים, בלי תלות בספרייה חיצונית. */
+function addMonths(iso: string, months: number): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  d.setMonth(d.getMonth() + months)
+  return d.toISOString().slice(0, 10)
+}
 
 function SourceToggle({
   value,
@@ -59,6 +109,7 @@ export function PaymentScheduleEditor({
   price,
   stages,
   onStagesChange,
+  isOffPlan,
   occupancyDate,
   onOccupancyDateChange,
   costAmounts,
@@ -68,6 +119,8 @@ export function PaymentScheduleEditor({
   price: number
   stages: readonly PaymentStage[]
   onStagesChange: (stages: PaymentStage[]) => void
+  /** דירה על הנייר. מוסיף את תאריך האכלוס. */
+  isOffPlan: boolean
   occupancyDate: IsoDate
   onOccupancyDateChange: (d: IsoDate) => void
   /** הסכומים בפועל של העלויות, לתצוגה בלבד. */
@@ -82,6 +135,54 @@ export function PaymentScheduleEditor({
 
   const update = (i: number, patch: Partial<PaymentStage>) => {
     onStagesChange(stages.map((s, idx) => (idx === i ? { ...s, ...patch } : s)))
+  }
+
+  /**
+   * מאזן את האחוזים כך שהסכום יהיה בדיוק 100, בלי לשנות את היחס ביניהם.
+   * שדה אחד סופג את שארית העיגול, אחרת המשתמש נתקע על 99.9%.
+   */
+  const normalize = () => {
+    if (stages.length === 0) return
+    const sum = stages.reduce((a, st) => a + st.percentOfPrice, 0)
+    if (sum <= 0) return
+    const scaled = stages.map((st) => ({
+      ...st,
+      percentOfPrice: Math.round((st.percentOfPrice / sum) * 1000) / 10,
+    }))
+    const drift =
+      Math.round((100 - scaled.reduce((a, st) => a + st.percentOfPrice, 0)) * 10) / 10
+    const last = scaled[scaled.length - 1]
+    if (last) last.percentOfPrice = Math.round((last.percentOfPrice + drift) * 10) / 10
+    onStagesChange(scaled)
+  }
+
+  const applyTemplate = (id: string) => {
+    const t = TEMPLATES.find((x) => x.id === id)
+    if (!t) return
+    const base = stages[0]?.dueDate ?? new Date().toISOString().slice(0, 10)
+    onStagesChange(
+      t.parts.map((part, i) => ({
+        id: `stage-${Date.now()}-${i}`,
+        label: part.label,
+        percentOfPrice: part.pct,
+        dueDate: addMonths(base, part.months),
+        linkedToIndex: isOffPlan,
+        // התשלום הראשון כמעט תמיד מההון העצמי, והמשכנתא נכנסת אחר כך.
+        fundingSource: i === 0 ? 'equity' : 'mortgage',
+      })),
+    )
+  }
+
+  const move = (i: number, dir: -1 | 1) => {
+    const j = i + dir
+    if (j < 0 || j >= stages.length) return
+    const next = [...stages]
+    const a = next[i]
+    const b = next[j]
+    if (!a || !b) return
+    next[i] = b
+    next[j] = a
+    onStagesChange(next)
   }
 
   const addStage = () => {
@@ -103,13 +204,14 @@ export function PaymentScheduleEditor({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-base font-semibold">לוח התשלומים</h3>
+        <h3 className="text-base font-semibold">התשלומים</h3>
         <p className="mt-1 text-xs leading-relaxed text-slate-500">
           מתי כל תשלום יוצא, כמה אחוז ממחיר הנכס, ומאיפה הכסף מגיע. זה קובע את
           המכנה של התשואה: מכירה מוקדמת נמדדת מול ההון שהושקע עד אז בלבד.
         </p>
       </div>
 
+      {isOffPlan && (
       <div>
         <label className="block text-sm font-medium text-slate-700">
           תאריך אכלוס צפוי (טופס 4)
@@ -126,6 +228,26 @@ export function PaymentScheduleEditor({
           <span className="text-amber-700">הכלל לא אומת מול רשות המסים.</span>
         </p>
       </div>
+      )}
+
+      <div className="space-y-1.5">
+        <span className="text-xs font-medium text-slate-600">התחל מתבנית</span>
+        <div className="flex flex-wrap gap-2">
+          {TEMPLATES.filter((t) => !t.offPlanOnly || isOffPlan).map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => applyTemplate(t.id)}
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs text-slate-700 hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700"
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-slate-400">
+          התבנית מחליפה את מה שקיים. אחריה תתאים את התאריכים לחוזה שלך.
+        </p>
+      </div>
 
       {stages.map((stage, i) => (
         <Card key={stage.id} className="space-y-3 p-3">
@@ -135,6 +257,24 @@ export function PaymentScheduleEditor({
               onChange={(e) => update(i, { label: e.target.value })}
               className="min-w-0 flex-1 rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-indigo-500"
             />
+            <button
+              type="button"
+              onClick={() => move(i, -1)}
+              disabled={i === 0}
+              aria-label={`הזז את ${stage.label} למעלה`}
+              className="rounded-lg px-2 py-1.5 text-sm text-slate-500 hover:bg-slate-100 disabled:opacity-30"
+            >
+              ↑
+            </button>
+            <button
+              type="button"
+              onClick={() => move(i, 1)}
+              disabled={i === stages.length - 1}
+              aria-label={`הזז את ${stage.label} למטה`}
+              className="rounded-lg px-2 py-1.5 text-sm text-slate-500 hover:bg-slate-100 disabled:opacity-30"
+            >
+              ↓
+            </button>
             <button
               type="button"
               onClick={() => onStagesChange(stages.filter((_, idx) => idx !== i))}
@@ -173,7 +313,7 @@ export function PaymentScheduleEditor({
             label="אחוז ממחיר הנכס"
             value={stage.percentOfPrice}
             onChange={(v) => update(i, { percentOfPrice: v })}
-            mode="percent"
+            unit="percent"
             base={price}
             baseLabel="ממחיר הנכס"
             max={100}
@@ -228,7 +368,16 @@ export function PaymentScheduleEditor({
           <span dir="ltr" className="tabular-nums">
             {(100 - totalPct).toFixed(1)}%
           </span>
-          . עד שזה יתוקן לוח התשלומים לא מופעל בחישוב.
+          . עד שזה יתוקן חלוקת התשלומים לא מופעלת בחישוב.
+          {stages.length > 0 && (
+            <button
+              type="button"
+              onClick={normalize}
+              className="ms-2 underline underline-offset-2"
+            >
+              אזן אוטומטית ל-100%
+            </button>
+          )}
         </p>
       )}
 
@@ -259,7 +408,9 @@ export function PaymentScheduleEditor({
                   {s.label}
                 </option>
               ))}
-              {occupancyDate && <option value={occupancyDate}>אכלוס</option>}
+              {isOffPlan && occupancyDate && (
+                <option value={occupancyDate}>אכלוס</option>
+              )}
             </select>
           </div>
         ))}

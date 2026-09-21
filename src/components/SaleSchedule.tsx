@@ -23,7 +23,13 @@ function fmtDate(iso: string): string {
 
 /** מספר עם צבע לפי סימן. מספרים תמיד LTR בתוך טקסט RTL. */
 function Signed({ value, compact = false }: { value: number; compact?: boolean }) {
-  const tone = value > 0 ? 'text-emerald-700' : value < 0 ? 'text-rose-700' : 'text-slate-600'
+  // design tokens: positive/destructive/muted-foreground
+  const tone =
+    value > 0
+      ? 'text-[var(--color-positive)]'
+      : value < 0
+        ? 'text-[var(--color-destructive)]'
+        : 'text-[var(--color-muted-foreground)]'
   return (
     <span dir="ltr" className={`tabular-nums ${tone}`}>
       {compact ? formatCompactILS(value) : formatILS(value)}
@@ -34,12 +40,20 @@ function Signed({ value, compact = false }: { value: number; compact?: boolean }
 function Pct({ value }: { value: number | null }) {
   if (value === null) {
     return (
-      <span className="text-slate-400" title="תקופת החזקה קצרה מ-12 חודשים. נרמול שנתי לא משמעותי כאן.">
+      <span
+        className="text-[var(--color-muted-foreground)]"
+        title="תקופת החזקה קצרה מ-12 חודשים. נרמול שנתי לא משמעותי כאן."
+      >
         -
       </span>
     )
   }
-  const tone = value > 0 ? 'text-emerald-700' : value < 0 ? 'text-rose-700' : 'text-slate-600'
+  const tone =
+    value > 0
+      ? 'text-[var(--color-positive)]'
+      : value < 0
+        ? 'text-[var(--color-destructive)]'
+        : 'text-[var(--color-muted-foreground)]'
   return (
     <span dir="ltr" className={`tabular-nums ${tone}`}>
       {formatPercentDirect(value)}
@@ -58,9 +72,9 @@ function SummaryCard({
 }) {
   return (
     <Card className="p-4">
-      <p className="text-xs font-medium text-slate-500">{label}</p>
+      <p className="text-xs font-medium text-[var(--color-muted-foreground)]">{label}</p>
       <p className="mt-1 text-2xl font-semibold">{value}</p>
-      {sub && <p className="mt-1 text-xs text-slate-500">{sub}</p>}
+      {sub && <p className="mt-1 text-xs text-[var(--color-muted-foreground)]">{sub}</p>}
     </Card>
   )
 }
@@ -84,7 +98,7 @@ export function SaleSchedule({ analysis }: { analysis: AnalysisResult }) {
     <section className="space-y-4">
       <div>
         <h2 className="text-lg font-semibold">כמה נרוויח אם נמכור בכל שנה</h2>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
           לפי ההנחות שהזנת: עליית ערך{' '}
           <span dir="ltr" className="tabular-nums">
             {formatPercentDirect(assumptions.assumedAppreciationPct)}
@@ -98,7 +112,7 @@ export function SaleSchedule({ analysis }: { analysis: AnalysisResult }) {
       </div>
 
       {anyUnverified && (
-        <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900">
+        <p className="rounded-[var(--radius)] bg-[var(--color-warning-bg)] px-3 py-2 text-xs leading-relaxed text-[var(--color-warning)]">
           מספרי מס השבח בטבלה נשענים על נתונים שטרם אומתו מול רשות המסים. תקרת
           הפטור שבשימוש היא של 2024 והיא מתעדכנת מדי שנה. אל תסתמך על המספרים
           האלה לצורך דיווח מס או החלטה - בדוק אותם מול רשות המסים או יועץ מס.
@@ -130,14 +144,14 @@ export function SaleSchedule({ analysis }: { analysis: AnalysisResult }) {
       )}
 
       {hiddenCount > 0 && (
-        <p className="rounded-xl bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-600">
+        <p className="rounded-[var(--radius)] bg-[var(--color-muted)] px-3 py-2 text-xs leading-relaxed text-[var(--color-muted-foreground)]">
           {hiddenCount} שורות לפני מועד לקיחת המשכנתא הוסתרו. בדירה על הנייר,
           מכירה בשלב הזה היא <strong>המחאת זכויות</strong> ולא מכירת נכס, והמספרים
           אינם משקפים אותה.{' '}
           <button
             type="button"
             onClick={() => setShowEarly(!showEarly)}
-            className="underline"
+            className="text-[var(--color-primary)] underline"
           >
             {showEarly ? 'הסתר' : 'הצג בכל זאת'}
           </button>
@@ -158,13 +172,13 @@ export function SaleSchedule({ analysis }: { analysis: AnalysisResult }) {
             </div>
             <dl className="mt-2 space-y-1 text-sm">
               <div className="flex justify-between">
-                <dt className="text-slate-500">שווי הנכס</dt>
+                <dt className="text-[var(--color-muted-foreground)]">שווי הנכס</dt>
                 <dd dir="ltr" className="tabular-nums">
                   {formatCompactILS(r.propertyValue)}
                 </dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-slate-500">רווח כולל</dt>
+                <dt className="text-[var(--color-muted-foreground)]">רווח כולל</dt>
                 <dd>
                   <Signed value={r.totalProfit} compact />
                 </dd>
@@ -173,45 +187,44 @@ export function SaleSchedule({ analysis }: { analysis: AnalysisResult }) {
             <button
               type="button"
               onClick={() => setExpanded(expanded === r.year ? null : r.year)}
-              className="mt-2 text-sm text-indigo-700 underline"
+              className="mt-2 text-sm text-[var(--color-primary)] underline"
             >
               {expanded === r.year ? 'פחות' : 'פרטים'}
             </button>
             {expanded === r.year && (
-              <dl className="mt-2 space-y-1 border-t border-slate-200 pt-2 text-sm">
+              <dl className="mt-2 space-y-1 border-t border-[var(--color-border)] pt-2 text-sm">
                 <div className="flex justify-between">
-                  <dt className="text-slate-500">יתרת משכנתא</dt>
+                  <dt className="text-[var(--color-muted-foreground)]">יתרת משכנתא</dt>
                   <dd dir="ltr" className="tabular-nums">
                     {formatCompactILS(r.mortgageBalance)}
                   </dd>
                 </div>
-
                 <div className="flex justify-between">
-                  <dt className="text-slate-500">כמה הכנסת</dt>
+                  <dt className="text-[var(--color-muted-foreground)]">כמה הכנסת</dt>
                   <dd dir="ltr" className="tabular-nums">
                     {formatCompactILS(r.totalInvestedSoFar)}
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-slate-500">מזה השלמות מהכיס</dt>
+                  <dt className="text-[var(--color-muted-foreground)]">מזה השלמות מהכיס</dt>
                   <dd dir="ltr" className="tabular-nums">
                     {formatCompactILS(r.cashContributions)}
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-slate-500">תזרים מצטבר</dt>
+                  <dt className="text-[var(--color-muted-foreground)]">תזרים מצטבר</dt>
                   <dd>
                     <Signed value={r.cumulativeNetCashflow} compact />
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-slate-500">מס שבח</dt>
+                  <dt className="text-[var(--color-muted-foreground)]">מס שבח</dt>
                   <dd dir="ltr" className="tabular-nums">
                     {formatCompactILS(r.capitalGains.taxAmount)}
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-slate-500">תשואה כוללת</dt>
+                  <dt className="text-[var(--color-muted-foreground)]">תשואה כוללת</dt>
                   <dd>
                     <Pct value={r.totalReturnPct} />
                   </dd>
@@ -222,9 +235,10 @@ export function SaleSchedule({ analysis }: { analysis: AnalysisResult }) {
         ))}
       </div>
 
+      {/* דסקטופ - טבלה. overflow-x-auto לתאימות מובייל כשמוצגת בעורך. */}
       <div className="hidden overflow-x-auto sm:block">
         <table className="w-full text-sm">
-          <thead className="border-b border-slate-300 text-start text-xs text-slate-500">
+          <thead className="border-b border-[var(--color-border)] text-start text-xs text-[var(--color-muted-foreground)]">
             <tr>
               <th className="p-2 text-start font-medium">תאריך מכירה</th>
               <th className="p-2 text-start font-medium">שווי הנכס</th>
@@ -248,13 +262,13 @@ export function SaleSchedule({ analysis }: { analysis: AnalysisResult }) {
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.year} className="border-b border-slate-100">
+              <tr key={r.year} className="border-b border-[var(--color-border)]">
                 <td className="p-2 font-medium">
                   <span dir="ltr" className="tabular-nums">
                     {fmtDate(r.saleDate)}
                   </span>
                   {r.beforeMortgageStart && (
-                    <span className="block text-xs font-normal text-amber-700">
+                    <span className="block text-xs font-normal text-[var(--color-warning)]">
                       לפני המשכנתא
                     </span>
                   )}
@@ -282,7 +296,10 @@ export function SaleSchedule({ analysis }: { analysis: AnalysisResult }) {
                 </td>
                 <td dir="ltr" className="p-2 text-start tabular-nums">
                   {r.capitalGains.exemptionApplied ? (
-                    <span className="text-emerald-700" title="פטור דירה יחידה הוחל">
+                    <span
+                      className="text-[var(--color-positive)]"
+                      title="פטור דירה יחידה הוחל"
+                    >
                       פטור
                     </span>
                   ) : (
@@ -301,7 +318,7 @@ export function SaleSchedule({ analysis }: { analysis: AnalysisResult }) {
         </table>
       </div>
 
-      <p className="text-xs leading-relaxed text-slate-500">
+      <p className="text-xs leading-relaxed text-[var(--color-muted-foreground)]">
         ההון המושקע בכל שורה הוא תשלומי ההון שבוצעו <strong>עד אותו תאריך</strong>,
         ועוד כל ההשלמות מהכיס - החודשים שבהם המשכנתא הייתה גדולה מהשכירות. לכן מכירה לפני תשלום גדול נמדדת מול פחות הון, והתשואה
         באחוזים גבוהה יותר - שם המינוף בשיא. מקף פירושו שתקופת ההחזקה קצרה מ-12 חודשים ונרמול שנתי

@@ -50,8 +50,12 @@ describe('שפיות המנוע מקצה לקצה', () => {
     expect(r.mortgage.firstMonthlyPayment).toBeLessThan(11_000);
   });
 
-  it('טבלת המכירה מכילה שורה לכל שנה באופק', () => {
-    expect(r.saleSchedule).toHaveLength(5);
+  it('טבלת המכירה מכילה שורה לכל שנה באופק, ועוד שורת כניסת הפטור', () => {
+    // 5 שנים, ועוד שורה אחת בתאריך שבו הפטור ממס שבח נכנס לתוקף.
+    // היא אינה נופלת על שנה עגולה ולכן מתווספת בנפרד.
+    const yearly = r.saleSchedule.filter((x) => !x.label);
+    expect(yearly).toHaveLength(5);
+    expect(r.saleSchedule.filter((x) => x.label === 'כניסת הפטור ממס שבח')).toHaveLength(1);
   });
 
   it('שווי הנכס עולה לאורך השנים לפי הנחת עליית הערך', () => {

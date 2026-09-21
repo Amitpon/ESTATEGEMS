@@ -209,6 +209,8 @@ export function calcCapitalGains(input: CapitalGainsInput): CapitalGainsResult {
 /** שורה בטבלת "כמה נרוויח אם נמכור בכל שנה". */
 export interface SaleAtYear {
   readonly year: number;
+  /** תווית לשורה שאינה שנה עגולה, למשל "כניסת הפטור". */
+  readonly label?: string;
   readonly saleDate: string;
   /** שווי הנכס לפי ההנחה של המשתמש. מעוגל גס - זו הנחה, לא ידיעה. */
   readonly propertyValue: number;
@@ -279,10 +281,21 @@ export interface SaleScheduleInput {
   readonly mortgageStartDate?: string;
   /** השנים מההרצה, עם השווי והיתרה בכל אחת. */
   readonly years: readonly {
+    /** שנה שלמה, או שבר שנה עבור נקודת מפתח. */
     readonly year: number;
     readonly propertyValue: number;
     readonly mortgageBalance: number;
     readonly cumulativeNetCashflow: number;
+    /**
+     * תאריך מכירה מדויק, שגובר על החישוב מ-`year`.
+     *
+     * נחוץ לנקודות מפתח שאינן נופלות על שנה עגולה - בעיקר הרגע שבו
+     * הפטור ממס שבח נכנס, 18 חודשים מהאכלוס. בלעדיו הטבלה מציגה את
+     * שנה 2 (24 חודשים) ומחלקת את התשואה ב-2 במקום ב-1.5.
+     */
+    readonly saleDate?: string;
+    /** תווית לתצוגה, כשהשורה אינה שנה עגולה. */
+    readonly label?: string;
   }[];
 }
 
@@ -296,11 +309,13 @@ export function buildSaleSchedule(input: SaleScheduleInput): readonly SaleAtYear
   const purchase = new Date(input.purchaseDate);
 
   return input.years.map((y) => {
-    const saleDate = new Date(
+    const saleDateFromYear = new Date(
       Date.UTC(purchase.getUTCFullYear() + y.year, purchase.getUTCMonth(), purchase.getUTCDate()),
     )
       .toISOString()
       .slice(0, 10);
+    // תאריך מפורש גובר, כדי שנקודת מפתח תיפול על היום הנכון.
+    const saleDate = y.saleDate ?? saleDateFromYear;
 
     const sellingCosts: DeductibleLine[] = [
       {
@@ -352,6 +367,7 @@ export function buildSaleSchedule(input: SaleScheduleInput): readonly SaleAtYear
 
     return {
       year: y.year,
+      ...(y.label ? { label: y.label } : {}),
       saleDate,
       beforeMortgageStart: input.mortgageStartDate
         ? saleDate < input.mortgageStartDate
@@ -369,4 +385,58 @@ export function buildSaleSchedule(input: SaleScheduleInput): readonly SaleAtYear
       averageAnnualReturnPct,
     };
   });
+}
+
+/**
+ * למה נבחרה נקודת היציאה שמוצגת בראש המסך.
+ *
+ * ההבחנה מגיעה מבעל המוצר: בדירה ראשונה יש רגע מוגדר שבו הפטור ממס שבח
+ * נכנס, וזו הנקודה שמעניינת את המשקיע. בדירה שאינה ראשונה אין פטור,
+ * ולכן אין תאריך מפתח - שם מוצגת פשוט הנקודה עם התשואה הגבוהה ביותר.
+ */
+export type ExitPointReason =
+  | 'exemption' // הפטור ממס שבח נכנס לתוקף כאן
+  | 'best-return' // אין פטור, זו התשואה הגבוהה ביותר
+  | 'end-of-horizon'; // אין פטור ואין שיא ברור - סוף התקופה
+
+export interface KeyExitPoint {
+  readonly row: SaleAtYear;
+  readonly reason: ExitPointReason;
+}
+
+/**
+ * בוחר את נקודת היציאה שתוצג כמדד הראשי.
+ *
+ * בדירה ראשונה: השורה **הראשונה** שבה הפטור חל. זה הרגע שאחריו המכירה
+ * פטורה ממס שבח, ולכן הוא נקודת ההשוואה הטבעית. אם הפטור לא חל באף שורה
+ * (למשל מחיר מכירה מעל התקרה) - נופלים לשיא התשואה.
+ *
+ * בדירה שאינה ראשונה: אין פטור, ולכן נבחרת השורה עם התשואה השנתית
+ * הממוצעת הגבוהה ביותר. שורות לפני תחילת המשכנתא אינן נספרות - מכירה
+ * שם היא המחאת זכויות ולא מכירת נכס.
+ */
+export function findKeyExitPoint(
+  rows: readonly SaleAtYear[],
+): KeyExitPoint | null {
+  const eligible = rows.filter((r) => !r.beforeMortgageStart);
+  if (eligible.length === 0) return null;
+
+  const firstExempt = eligible.find((r) => r.capitalGains.exemptionApplied);
+  if (firstExempt) return { row: firstExempt, reason: 'exemption' };
+
+  // בלי פטור, מה שמעניין הוא איפה התשואה הממוצעת לשנה הכי גבוהה.
+  // שורות בלי תשואה שנתית (החזקה קצרה מ-12 חודשים) אינן מועמדות.
+  const withReturn = eligible.filter((r) => r.averageAnnualReturnPct !== null);
+  if (withReturn.length === 0) {
+    const last = eligible[eligible.length - 1];
+    return last ? { row: last, reason: 'end-of-horizon' } : null;
+  }
+
+  let best = withReturn[0]!;
+  for (const r of withReturn) {
+    if ((r.averageAnnualReturnPct ?? 0) > (best.averageAnnualReturnPct ?? 0)) {
+      best = r;
+    }
+  }
+  return { row: best, reason: 'best-return' };
 }

@@ -60,43 +60,47 @@ export function CashflowTimeline({
     <section className="space-y-3">
       <div>
         <h2 className="text-lg font-semibold">מתי משלמים ומה</h2>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
           כל תאריך והסכום שיוצא בו. "מהכיס" הוא הון עצמי, "משכנתא" ממומן בהלוואה.
         </p>
       </div>
 
-      <div className="space-y-2">
+      {/* space-y-3 = 12px בין כרטיסים, יותר נשימה מ-space-y-2 */}
+      <div className="space-y-3">
         {groups.map((g) => {
           runningEquity += g.equity
           const isOccupancy = occupancyDate === g.date
           return (
-            <Card key={g.date} className="p-3">
+            <Card key={g.date} className="p-4">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <div className="flex items-baseline gap-2">
+                <div className="flex items-center gap-2">
                   <span dir="ltr" className="font-semibold tabular-nums">
                     {fmtDate(g.date)}
                   </span>
                   {isOccupancy && (
-                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800">
+                    // badge - design token צבעים
+                    <span className="rounded-full bg-[var(--color-positive-bg)] px-2 py-0.5 text-xs text-[var(--color-positive)]">
                       אכלוס
                     </span>
                   )}
                 </div>
-                <span dir="ltr" className="text-lg font-semibold tabular-nums">
+                {/* סכום כולל באותו תאריך - מספר בולט */}
+                <span dir="ltr" className="text-lg font-bold tabular-nums">
                   {formatILS(g.equity + g.mortgage)}
                 </span>
               </div>
 
-              <ul className="mt-2 space-y-1 text-sm">
+              <ul className="mt-3 space-y-1.5 text-sm">
                 {g.items.map((it, i) => (
                   <li key={`${it.key}-${i}`} className="flex justify-between gap-3">
-                    <span className="min-w-0 flex-1 truncate text-slate-600">
+                    <span className="min-w-0 flex-1 truncate text-[var(--color-muted-foreground)]">
                       {it.label}
+                      {/* מקור המימון - קוד צבע לפי משמעות */}
                       <span
                         className={
                           it.source === 'equity'
-                            ? 'ms-2 text-xs text-indigo-700'
-                            : 'ms-2 text-xs text-slate-400'
+                            ? 'ms-2 text-xs text-[var(--color-primary)]'
+                            : 'ms-2 text-xs text-[var(--color-muted-foreground)]'
                         }
                       >
                         {it.source === 'equity' ? 'מהכיס' : 'משכנתא'}
@@ -109,39 +113,45 @@ export function CashflowTimeline({
                 ))}
               </ul>
 
-              <div className="mt-2 flex justify-between border-t border-slate-100 pt-2 text-xs text-slate-500">
-                <span>מהכיס בתאריך זה</span>
-                <span dir="ltr" className="tabular-nums">
-                  {formatILS(g.equity)}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs text-slate-500">
-                <span>סך מהכיס עד כאן</span>
-                <span dir="ltr" className="font-medium tabular-nums">
-                  {formatILS(runningEquity)}
-                </span>
+              {/* סיכום הכיס - מופרד בקו דק */}
+              <div className="mt-3 space-y-1 border-t border-[var(--color-border)] pt-3 text-xs text-[var(--color-muted-foreground)]">
+                <div className="flex justify-between">
+                  <span>מהכיס בתאריך זה</span>
+                  <span dir="ltr" className="tabular-nums">
+                    {formatILS(g.equity)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>סך מהכיס עד כאן</span>
+                  <span dir="ltr" className="font-semibold tabular-nums">
+                    {formatILS(runningEquity)}
+                  </span>
+                </div>
               </div>
             </Card>
           )
         })}
       </div>
 
-      <Card className="p-3">
-        <div className="flex justify-between text-sm">
-          <span className="text-slate-600">סך הכל מהכיס</span>
-          <span dir="ltr" className="font-semibold tabular-nums">
-            {formatILS(timeline.totalEquity)}
-          </span>
-        </div>
-        <div className="mt-1 flex justify-between text-sm">
-          <span className="text-slate-600">סך הכל מהמשכנתא</span>
-          <span dir="ltr" className="font-semibold tabular-nums">
-            {formatILS(timeline.totalMortgage)}
-          </span>
+      {/* סיכום כולל */}
+      <Card className="p-4">
+        <div className="space-y-1.5 text-sm">
+          <div className="flex justify-between">
+            <span className="text-[var(--color-muted-foreground)]">סך הכל מהכיס</span>
+            <span dir="ltr" className="font-semibold tabular-nums">
+              {formatILS(timeline.totalEquity)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[var(--color-muted-foreground)]">סך הכל מהמשכנתא</span>
+            <span dir="ltr" className="font-semibold tabular-nums">
+              {formatILS(timeline.totalMortgage)}
+            </span>
+          </div>
         </div>
       </Card>
 
-      <p className="text-xs leading-relaxed text-slate-500">
+      <p className="text-xs leading-relaxed text-[var(--color-muted-foreground)]">
         הסכומים כאן אינם כוללים את ההשלמות החודשיות מהכיס אחרי האכלוס - אלה
         מופיעות בטבלת הרווח ממכירה, בעמודת ההון המושקע.
       </p>
