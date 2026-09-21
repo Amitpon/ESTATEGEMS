@@ -1,0 +1,38 @@
+# רענון יומי של נתוני בנק ישראל.
+#
+# למה זה קיים: האתר סטטי, והנתונים נמשכים בזמן הבילד. בלי הטריגר הזה,
+# הנתונים קופאים על מועד הדחיפה האחרונה לגיט.
+#
+# מה זה עושה: דופק על Build Hook של נטליפיי, שמפעיל בילד חדש. הבילד מריץ
+# `npm run data:boi` ומושך נתונים טריים.
+#
+# הגדרה חד פעמית:
+#   1. בנטליפיי: Site configuration -> Build & deploy -> Build hooks -> Add build hook
+#   2. בגיטהאב: Settings -> Secrets and variables -> Actions -> New repository secret
+#      שם: NETLIFY_BUILD_HOOK   ערך: ה-URL מהשלב הקודם
+
+name: רענון נתוני בנק ישראל
+
+on:
+  schedule:
+    # 03:00 UTC כל יום. שעה שקטה, לפני תחילת יום המסחר בישראל.
+    # גיטהאב לא מתחייב לדיוק בדקה - עיכוב של עד ~15 דקות הוא נורמלי וזה בסדר
+    # כאן, כי ריבית בנק ישראל מתעדכנת כ-8 פעמים בשנה.
+    - cron: '0 3 * * *'
+  # מאפשר הרצה ידנית מלשונית Actions, לבדיקה שההגדרה עובדת.
+  workflow_dispatch:
+
+jobs:
+  trigger-rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: הפעלת בילד בנטליפיי
+        run: |
+          if [ -z "${{ secrets.NETLIFY_BUILD_HOOK }}" ]; then
+            echo "חסר הסוד NETLIFY_BUILD_HOOK. ראה הוראות ההגדרה בראש הקובץ."
+            exit 1
+          fi
+          # -f מחזיר קוד יציאה שונה מאפס על שגיאת HTTP, כדי שכשל יהיה גלוי
+          # בלשונית Actions ולא ייבלע בשקט.
+          curl -f -X POST -d '{}' "${{ secrets.NETLIFY_BUILD_HOOK }}"
+          echo "הבילד הופעל."

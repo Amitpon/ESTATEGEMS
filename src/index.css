@@ -1,0 +1,199 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────
+   Design Tokens - Light Mode (ברירת מחדל)
+   כל הצבעים ב-HSL לתאימות עם shadcn pattern.
+   הפלטה לפי design-spec.md סעיף 1.
+   ───────────────────────────────────────────── */
+@theme {
+  /* Fonts */
+  --default-font-family: "Heebo", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", monospace;
+
+  /* Radius - 12px כפי שנקבע באפיון */
+  --radius: 0.75rem;
+  --radius-sm: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-full: 9999px;
+
+  /* Spacing base (4px grid) */
+  --spacing-0: 0;
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-5: 1.25rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-10: 2.5rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+  --spacing-20: 5rem;
+
+  /* Typography scale */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+  --text-3xl: 2.5rem;
+
+  /* ─── Neutral Base ─── */
+  --color-background: hsl(0 0% 97%);
+  --color-foreground: hsl(222 25% 12%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(222 25% 12%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(222 25% 12%);
+
+  /* ─── Brand Primary - כחול עמוק ─── */
+  /* בחרנו כחול כי ירוק שמור לתזרים חיובי ואדום לשלילי */
+  --color-primary: hsl(231 58% 46%);
+  --color-primary-foreground: hsl(0 0% 100%);
+
+  /* ─── Secondary / Muted ─── */
+  --color-secondary: hsl(220 14% 93%);
+  --color-secondary-foreground: hsl(222 25% 28%);
+  --color-muted: hsl(220 14% 93%);
+  --color-muted-foreground: hsl(220 12% 52%);
+  --color-accent: hsl(220 14% 93%);
+  --color-accent-foreground: hsl(222 25% 28%);
+
+  /* ─── Semantic Colors ─── */
+  /* ירוק: תזרים חיובי, תשואה טובה (>4%) */
+  --color-positive: hsl(142 60% 36%);
+  --color-positive-bg: hsl(142 60% 95%);
+  --color-positive-foreground: hsl(142 60% 36%);
+
+  /* ענבר: תשואה בינונית (2%-4%) */
+  --color-warning: hsl(34 90% 46%);
+  --color-warning-bg: hsl(34 90% 95%);
+  --color-warning-foreground: hsl(34 90% 46%);
+
+  /* אדום: תזרים שלילי, תשואה נמוכה (<2%) */
+  --color-destructive: hsl(0 70% 48%);
+  --color-destructive-bg: hsl(0 70% 95%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+
+  /* ─── Borders & Inputs ─── */
+  --color-border: hsl(220 14% 88%);
+  --color-input: hsl(220 14% 88%);
+  --color-ring: hsl(231 58% 46%);
+}
+
+/* ─────────────────────────────────────────────
+   Dark Mode
+   ───────────────────────────────────────────── */
+.dark {
+  --color-background: hsl(222 25% 9%);
+  --color-foreground: hsl(220 14% 92%);
+  --color-card: hsl(222 22% 13%);
+  --color-card-foreground: hsl(220 14% 92%);
+  --color-popover: hsl(222 22% 13%);
+  --color-popover-foreground: hsl(220 14% 92%);
+
+  --color-primary: hsl(231 72% 65%);
+  --color-primary-foreground: hsl(222 25% 9%);
+
+  --color-secondary: hsl(222 18% 18%);
+  --color-secondary-foreground: hsl(220 14% 75%);
+  --color-muted: hsl(222 18% 18%);
+  --color-muted-foreground: hsl(220 12% 50%);
+  --color-accent: hsl(222 18% 18%);
+  --color-accent-foreground: hsl(220 14% 75%);
+
+  --color-positive: hsl(142 55% 48%);
+  --color-positive-bg: hsl(142 30% 14%);
+  --color-positive-foreground: hsl(142 55% 48%);
+
+  --color-warning: hsl(34 80% 58%);
+  --color-warning-bg: hsl(34 40% 14%);
+  --color-warning-foreground: hsl(34 80% 58%);
+
+  --color-destructive: hsl(0 65% 58%);
+  --color-destructive-bg: hsl(0 35% 14%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+
+  --color-border: hsl(222 18% 20%);
+  --color-input: hsl(222 18% 20%);
+  --color-ring: hsl(231 72% 65%);
+}
+
+/* ─────────────────────────────────────────────
+   Global Resets
+   ───────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* RTL מוגדר ב-index.html. הוספה כגיבוי. */
+  direction: rtl;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--default-font-family);
+  font-size: 1rem;
+  line-height: 1.6;
+  /* מניעת zoom בפוקוס על iOS */
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Focus visible גלובלי - WCAG AA */
+:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* tabular-nums על כל מספרים בטבלאות ורשימות */
+[data-numeric],
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─────────────────────────────────────────────
+   Print Stylesheet - ייצוא PDF דרך window.print()
+   html2canvas שבורה ברינדור עברית, לכן print CSS.
+   ───────────────────────────────────────────── */
+@media print {
+  /* הסתרת אלמנטי ניווט */
+  [data-no-print],
+  nav,
+  .bottom-nav {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+    color: black;
+    font-size: 12pt;
+  }
+
+  /* שמור צבעים סמנטיים בהדפסה */
+  [data-positive] {
+    color: #1a5e34 !important;
+  }
+  [data-warning] {
+    color: #8a4d00 !important;
+  }
+  [data-destructive] {
+    color: #9b0000 !important;
+  }
+
+  /* מניעת שבירת עמוד בתוך כרטיסיה */
+  .card,
+  [data-metric-section] {
+    break-inside: avoid;
+  }
+
+  /* כותרת בכל עמוד */
+  @page {
+    margin: 15mm;
+  }
+}

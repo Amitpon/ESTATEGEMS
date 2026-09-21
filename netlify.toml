@@ -1,0 +1,41 @@
+# הגדרות Netlify.
+#
+# חשוב: הדאטה של בנק ישראל נמשך בזמן הבילד ולא מהדפדפן.
+# ה-API של בנק ישראל לא מחזיר CORS headers, ולכן fetch ישיר מהדפדפן ייחסם.
+# הסקריפט רץ כאן, על שרת הבילד, ושומר snapshot סטטי שנארז ל-bundle.
+
+[build]
+  # ה-|| מכוון. אם ה-API של בנק ישראל נופל, הדיפלוי לא נכשל - הוא ממשיך עם
+  # ה-snapshot המחויב ב-src/data/boi-rates.json. הנתון מוצג למשתמש עם התאריך
+  # שלו ממילא, אז נתון ישן הוא הרבה פחות גרוע מאתר שלא עולה.
+  # שים לב ל-";" לפני build: כך כשל בבילד עצמו עדיין מפיל את הדיפלוי כראוי.
+  command = "npm run data:boi || echo 'אזהרה: משיכת נתוני בנק ישראל נכשלה. ממשיך עם ה-snapshot הקיים.' ; npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# שמשון. חייב להופיע לפני כלל ה-SPA, אחרת /* בולע אותו ומחזיר HTML
+# במקום את תשובת הפונקציה. סדר הכללים כאן קובע.
+[[redirects]]
+  from = "/api/shimshon"
+  to = "/.netlify/functions/shimshon"
+  status = 200
+  force = true
+
+# SPA - כל נתיב מוגש מ-index.html כדי שניווט בצד לקוח יעבוד ברענון.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
