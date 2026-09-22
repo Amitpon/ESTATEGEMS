@@ -12,6 +12,7 @@ import { AmortizationTable } from '@/components/AmortizationTable'
 import { Disclosure } from '@/components/ui/Disclosure'
 import { ReportInsights } from '@/components/ReportInsights'
 import { printReport } from '@/lib/print'
+import { PrintReport } from '@/components/PrintReport'
 import { AssumptionsPanel, type AssumptionsPanelValues } from '@/components/AssumptionsPanel'
 import { buildShimshonContext } from '@/services/shimshon'
 
@@ -632,6 +633,8 @@ export default function App() {
         </p>
         </div>
       </main>
+
+      {result.ok && <PrintReport analysis={result.data} />}
 
       <ShimshonChat context={shimshonContext} />
     </div>

@@ -162,8 +162,20 @@ body {
    html2canvas שבורה ברינדור עברית, לכן print CSS.
    ───────────────────────────────────────────── */
 @media print {
-  /* המסך מחולק לשני שלבים, והשלב הלא-פעיל נושא `hidden` של Tailwind.
-     בלי הביטול הזה חצי מהדוח פשוט לא יודפס. */
+  /* בהדפסה מוצג **רק** הדוח. המסך בנוי לחקירה (סליידרים, מתגים, טבלאות
+     ארוכות); הדוח בנוי לקריאה. זה תוכן אחר, לא עיצוב אחר של אותו תוכן.
+     הכלל הזה גם מייתר את הצורך לפתוח `<details>` מקופלים. */
+  body:has([data-print-report]) > * {
+    display: none !important;
+  }
+  [data-print-report] {
+    display: block !important;
+  }
+  /* הדוח יושב עמוק ב-DOM, ולכן כל אבותיו חייבים להישאר גלויים. */
+  body:has([data-print-report]) :has([data-print-report]) {
+    display: block !important;
+  }
+
   [data-print-section] {
     display: block !important;
   }

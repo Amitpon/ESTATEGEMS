@@ -25,20 +25,27 @@ import {
 /** הטווח המקובל, מוצג מתחת לשדה. אף פעם לא ממלא אותו. */
 function Anchor({ anchor }: { anchor: CostAnchor }) {
   return (
-    <p className="mt-1 text-xs leading-relaxed text-slate-500">
+    <p className="mt-1 text-xs leading-relaxed text-[var(--color-muted-foreground)]">
       מקובל בשוק:{' '}
       <span dir="ltr" className="tabular-nums">
         {formatAnchorRange(anchor)}
       </span>{' '}
-      <span className="text-slate-400">
+      <span className="text-[var(--color-muted-foreground)]">
         ({anchor.source}, {anchor.asOf}
         {anchor.verified ? '' : ', לא אומת'})
       </span>
-      {anchor.note && <span className="block text-slate-400">{anchor.note}</span>}
+      {anchor.note && (
+        <span className="block text-[var(--color-muted-foreground)]">{anchor.note}</span>
+      )}
     </p>
   )
 }
 
+/**
+ * Section - accordion עם Card wrapper.
+ * כפתור ה-header הוא full-width עם p-4, נותן אזור מגע מספיק.
+ * האינדיקטור ‹ מסתובב: סגור = ← (שמאל), פתוח = ↓ (rotate-90 clockwise).
+ */
 function Section({
   title,
   hint,
@@ -56,17 +63,27 @@ function Section({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between p-4 text-start"
+        className="flex min-h-[52px] w-full items-center justify-between p-4 text-start"
       >
         <span>
           <span className="font-medium">{title}</span>
-          {hint && <span className="block text-xs text-slate-500">{hint}</span>}
+          {hint && (
+            <span className="block text-xs text-[var(--color-muted-foreground)]">{hint}</span>
+          )}
         </span>
-        <span className="text-slate-400" aria-hidden>
-          {open ? '−' : '+'}
+        {/* אינדיקטור פתוח/סגור - rotate-90 = ↓ כשפתוח */}
+        <span
+          aria-hidden
+          className={`inline-block text-[var(--color-muted-foreground)] transition-transform duration-200 ${open ? 'rotate-90' : ''}`}
+        >
+          ‹
         </span>
       </button>
-      {open && <div className="space-y-5 border-t border-slate-200 p-4">{children}</div>}
+      {open && (
+        <div className="space-y-5 border-t border-[var(--color-border)] p-4">
+          {children}
+        </div>
+      )}
     </Card>
   )
 }
@@ -169,7 +186,7 @@ export function AssumptionsPanel({
         hint="מתי כל שקל יוצא מהכיס"
         defaultOpen={values.hasPaymentSchedule}
       >
-        <p className="text-xs leading-relaxed text-slate-500">
+        <p className="text-xs leading-relaxed text-[var(--color-muted-foreground)]">
           גם ביד שנייה התשלום כמעט תמיד מחולק - מקדמה בחתימה והיתרה במסירה.
           החלוקה קובעת את המכנה של התשואה: מכירה מוקדמת נמדדת מול ההון שהושקע
           עד אותו תאריך בלבד.
@@ -180,7 +197,7 @@ export function AssumptionsPanel({
             type="checkbox"
             checked={values.hasPaymentSchedule}
             onChange={(e) => set('hasPaymentSchedule')(e.target.checked)}
-            className="size-5 rounded border-slate-300"
+            className="size-5 rounded border-[var(--color-border)]"
           />
           <span className="text-sm font-medium">התשלום מחולק לכמה תאריכים</span>
         </label>
@@ -195,7 +212,7 @@ export function AssumptionsPanel({
                 type="checkbox"
                 checked={values.isContractorPurchase}
                 onChange={(e) => set('isContractorPurchase')(e.target.checked)}
-                className="size-5 rounded border-slate-300"
+                className="size-5 rounded border-[var(--color-border)]"
               />
               <span className="text-sm font-medium">
                 זו דירה על הנייר, רכישה מקבלן
@@ -215,7 +232,7 @@ export function AssumptionsPanel({
             />
 
             {values.isContractorPurchase && (
-              <div className="border-t border-slate-200 pt-3">
+              <div className="border-t border-[var(--color-border)] pt-3">
                 <Slider
                   label="שינוי מדד תשומות הבנייה"
                   valueDisplay={formatPercentDirect(values.indexChangePct)}
@@ -225,10 +242,10 @@ export function AssumptionsPanel({
                   value={values.indexChangePct}
                   onChange={(e) => set('indexChangePct')(Number(e.target.value))}
                 />
-                <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                <p className="mt-1 text-xs leading-relaxed text-[var(--color-muted-foreground)]">
                   תשלומים לקבלן צמודים למדד הזה. זו הנחה שלך, לא תחזית.
                   <br />
-                  <span className="text-slate-400">
+                  <span className="text-[var(--color-muted-foreground)]">
                     לשם השוואה, הנתון ההיסטורי:{' '}
                     <span dir="ltr" className="tabular-nums">+3.5%</span> בשנה
                     האחרונה לפי למ״ס, אוגוסט 2026.
@@ -300,7 +317,7 @@ export function AssumptionsPanel({
             value={values.vacancyPct}
             onChange={(e) => set('vacancyPct')(Number(e.target.value))}
           />
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-[var(--color-muted-foreground)]">
             כמה זמן בשנה הדירה עומדת ריקה. משפיע על התזרים ועל כל המדדים.
           </p>
         </div>
@@ -314,7 +331,7 @@ export function AssumptionsPanel({
             value={values.sellingCostPct}
             onChange={(e) => set('sellingCostPct')(Number(e.target.value))}
           />
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-[var(--color-muted-foreground)]">
             מתווך ועו"ד ביום המכירה. נכנס לטבלת הרווח ממכירה.
           </p>
         </div>
@@ -370,7 +387,7 @@ export function AssumptionsPanel({
           baseLabel="ממחיר הנכס"
           max={price * 0.15}
         />
-        <p className="text-xs leading-relaxed text-slate-500">
+        <p className="text-xs leading-relaxed text-[var(--color-muted-foreground)]">
           הרזרבה אינה הון מושקע - היא כסף שאתה מחזיק בצד. לכן היא נכנסת ל"דרוש
           ביום 1" אבל לא למכנה של התשואה על ההון.
         </p>
@@ -423,7 +440,8 @@ export function AssumptionsPanel({
           />
           <Anchor anchor={OPERATING_ANCHORS.find((a) => a.key === 'maintenance')!} />
         </div>
-        <p className="rounded-lg bg-slate-50 p-3 text-xs leading-relaxed text-slate-600">
+        {/* ארנונה: הסבר למה אינה בתזרים */}
+        <p className="rounded-[var(--radius)] bg-[var(--color-muted)] p-3 text-xs leading-relaxed text-[var(--color-muted-foreground)]">
           <strong>ארנונה:</strong> בדירה מושכרת הדייר משלם אותה, ולכן היא אינה
           בתזרים שלך. היא נכנסת רק בחודשי הריק. אין טווח גנרי - התעריף תלוי
           בעירייה, בשטח ובסיווג.
@@ -431,7 +449,7 @@ export function AssumptionsPanel({
       </Section>
 
 
-      <p className="px-1 text-xs leading-relaxed text-slate-500">
+      <p className="px-1 text-xs leading-relaxed text-[var(--color-muted-foreground)]">
         טווחי השוק המוצגים כאן הם אינדיקציה בלבד ורובם מבוססים על אתרי שיווק של
         נותני שירות. הם מוצגים כדי שתזין מתוך ידיעה, לא כדי למלא בשבילך. הסכום
         שקובע הוא מה שאתה מזין.

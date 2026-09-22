@@ -19,7 +19,7 @@
 | חלוקת תשלומים | כל עסקה, לא רק קבלן | `PaymentScheduleEditor.tsx` |
 | לוח סילוקין | מתג שנים/חודשים, עימוד | `AmortizationTable.tsx` |
 | שמשון | 53 מונחים + חיפוש אינטרנט | `netlify/functions/shimshon.mts` |
-| דוח מודפס | עובד | `src/lib/print.ts`, `index.css` |
+| דוח מודפס | רכיב ייעודי, קומפקטי | `PrintReport.tsx`, `print.ts` |
 | נתוני בנק ישראל | snapshot יומי | `scripts/`, `.github/workflows/` |
 
 ---
@@ -155,8 +155,17 @@
 ### 4.6 דוח
 
 - בחירת סקשנים לדוח
-- כותרת עם שם הנכס ותאריך
-- גרסה מקוצרת לעמוד אחד
+- כותרת עם שם הנכס
+- **לבדוק בדפדפן אמיתי** - הטסטים מכסים תוכן, לא פריסה על נייר
+
+### 4.7 להשלים את מעבר ה-design tokens
+
+סוכן ה-ui-designer נכשל על מגבלת קצב באמצע. הומרו: `CashflowTimeline`,
+`AmortizationTable`, `ValueInput`, `Disclosure`. **`AssumptionsPanel`
+נשאר באמצע**, ו-`ExitPointHero`, `ReportInsights`, `SaleSchedule`,
+`PaymentScheduleEditor`, `ShimshonChat` עדיין עם צבעים קשיחים.
+
+כל ה-tokens שבשימוש מוגדרים - אין שבר. זה חוב עקביות, לא באג.
 
 ---
 
@@ -192,8 +201,8 @@
 
 | מדד | ערך | יעד |
 |---|---|---|
-| טסטים | 98 | כיסוי מלא למנוע |
-| משקל | ~122 kB gzip | ~174 kB |
+| טסטים | 104 | כיסוי מלא למנוע |
+| משקל | ~124 kB gzip | ~174 kB |
 | `tsc --noEmit` | נקי | חייב להישאר נקי |
 
 **לפני שמשהו נחשב "done":** `npx tsc --noEmit` **וגם** `npx vitest run`

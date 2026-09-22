@@ -84,8 +84,9 @@ export function ShimshonChat({ context }: Props) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-5 start-5 z-50 flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200"
+        className="fixed bottom-5 end-5 z-50 flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200"
         style={{ bottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))' }}
+        data-no-print
       >
         <span aria-hidden>💬</span>
         שאל את שמשון
@@ -94,7 +95,7 @@ export function ShimshonChat({ context }: Props) {
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 sm:inset-x-auto sm:start-5 sm:bottom-5 sm:w-[420px]">
+    <div data-no-print className="fixed inset-x-0 bottom-0 z-50 sm:inset-x-auto sm:end-5 sm:bottom-5 sm:w-[420px]">
       <div className="flex max-h-[85dvh] flex-col overflow-hidden rounded-t-2xl border border-slate-200 bg-white shadow-2xl sm:max-h-[70dvh] sm:rounded-2xl">
         <header className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
           <div>

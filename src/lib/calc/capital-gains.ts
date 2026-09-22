@@ -394,26 +394,41 @@ export function buildSaleSchedule(input: SaleScheduleInput): readonly SaleAtYear
  * נכנס, וזו הנקודה שמעניינת את המשקיע. בדירה שאינה ראשונה אין פטור,
  * ולכן אין תאריך מפתח - שם מוצגת פשוט הנקודה עם התשואה הגבוהה ביותר.
  */
+/**
+ * למה נבחרה נקודת היציאה שמוצגת בראש המסך.
+ *
+ * הכרעת בעל המוצר (2026-09-22): **הנקודה היא תמיד זו עם התשואה השנתית
+ * הגבוהה ביותר בסימולציה.** אם זה אחרי 10 שנים - זה התאריך.
+ *
+ * הפטור ממס שבח אינו בוחר את הנקודה, הוא רק **משפיע** עליה: מכירה לפני
+ * הפטור משלמת 25% מס, ולכן התשואה שם נמוכה. בדירה על הנייר עם משכנתא
+ * גבוהה השיא נופל בפועל בדיוק סביב 18 החודשים מהאכלוס - אבל זו **תוצאה
+ * של החישוב ולא כלל שנכפה עליו**.
+ */
 export type ExitPointReason =
-  | 'exemption' // הפטור ממס שבח נכנס לתוקף כאן
-  | 'best-return' // אין פטור, זו התשואה הגבוהה ביותר
-  | 'end-of-horizon'; // אין פטור ואין שיא ברור - סוף התקופה
+  /** השיא, והמכירה שם פטורה ממס שבח. */
+  | 'peak-exempt'
+  /** השיא, והמכירה שם חייבת במס שבח. */
+  | 'peak-taxed'
+  /** אין תשואה שנתית באף שורה - תקופת החזקה קצרה מ-12 חודשים. */
+  | 'end-of-horizon';
 
 export interface KeyExitPoint {
   readonly row: SaleAtYear;
   readonly reason: ExitPointReason;
+  /**
+   * הרווח המצטבר הגבוה ביותר בסימולציה, אם הוא **אינו** באותה שורה.
+   * הרווח המצטבר כמעט תמיד עולה עם הזמן, בעוד הממוצע השנתי מגיע לשיא
+   * ויורד. כשהשניים נפרדים, המשתמש צריך לראות את שניהם.
+   */
+  readonly maxTotalReturnRow: SaleAtYear | null;
 }
 
 /**
- * בוחר את נקודת היציאה שתוצג כמדד הראשי.
+ * בוחר את נקודת היציאה שתוצג כמדד הראשי: **התשואה השנתית הגבוהה ביותר.**
  *
- * בדירה ראשונה: השורה **הראשונה** שבה הפטור חל. זה הרגע שאחריו המכירה
- * פטורה ממס שבח, ולכן הוא נקודת ההשוואה הטבעית. אם הפטור לא חל באף שורה
- * (למשל מחיר מכירה מעל התקרה) - נופלים לשיא התשואה.
- *
- * בדירה שאינה ראשונה: אין פטור, ולכן נבחרת השורה עם התשואה השנתית
- * הממוצעת הגבוהה ביותר. שורות לפני תחילת המשכנתא אינן נספרות - מכירה
- * שם היא המחאת זכויות ולא מכירת נכס.
+ * שורות לפני תחילת המשכנתא אינן נספרות - מכירה שם היא המחאת זכויות
+ * ולא מכירת נכס, והמספרים שם חסרי משמעות.
  */
 export function findKeyExitPoint(
   rows: readonly SaleAtYear[],
@@ -421,22 +436,31 @@ export function findKeyExitPoint(
   const eligible = rows.filter((r) => !r.beforeMortgageStart);
   if (eligible.length === 0) return null;
 
-  const firstExempt = eligible.find((r) => r.capitalGains.exemptionApplied);
-  if (firstExempt) return { row: firstExempt, reason: 'exemption' };
-
-  // בלי פטור, מה שמעניין הוא איפה התשואה הממוצעת לשנה הכי גבוהה.
-  // שורות בלי תשואה שנתית (החזקה קצרה מ-12 חודשים) אינן מועמדות.
   const withReturn = eligible.filter((r) => r.averageAnnualReturnPct !== null);
   if (withReturn.length === 0) {
     const last = eligible[eligible.length - 1];
-    return last ? { row: last, reason: 'end-of-horizon' } : null;
+    return last
+      ? { row: last, reason: 'end-of-horizon', maxTotalReturnRow: null }
+      : null;
   }
 
+  // שיא התשואה השנתית. בתיקו נבחרת המוקדמת, כי כסף מוקדם שווה יותר.
   let best = withReturn[0]!;
   for (const r of withReturn) {
     if ((r.averageAnnualReturnPct ?? 0) > (best.averageAnnualReturnPct ?? 0)) {
       best = r;
     }
   }
-  return { row: best, reason: 'best-return' };
+
+  // שיא הרווח המצטבר, שלרוב נופל בסוף התקופה ולא באותה נקודה.
+  let maxTotal = withReturn[0]!;
+  for (const r of withReturn) {
+    if (r.totalReturnPct > maxTotal.totalReturnPct) maxTotal = r;
+  }
+
+  return {
+    row: best,
+    reason: best.capitalGains.exemptionApplied ? 'peak-exempt' : 'peak-taxed',
+    maxTotalReturnRow: maxTotal.saleDate === best.saleDate ? null : maxTotal,
+  };
 }

@@ -80,15 +80,13 @@ export function buildInsights(a: AnalysisResult): Insight[] {
   // 4. נקודת היציאה - מה שהמנוע בחר כנקודה המשמעותית.
   const exit = findKeyExitPoint(a.saleSchedule)
   if (exit) {
-    const isExempt = exit.reason === 'exemption'
+    const isExempt = exit.reason === 'peak-exempt'
     out.push({
       tone: 'neutral',
-      title: isExempt
-        ? `הפטור ממס שבח נכנס ב-${fmtDate(exit.row.saleDate)}`
-        : `התשואה הגבוהה ביותר ב-${fmtDate(exit.row.saleDate)}`,
+      title: `התשואה הגבוהה ביותר ב-${fmtDate(exit.row.saleDate)}`,
       body: isExempt
-        ? `מכירה לפני התאריך הזה חייבת במס שבח. באותה נקודה הרווח המצטבר ${formatPercentDirect(exit.row.totalReturnPct)} על ${formatCompactILS(exit.row.totalInvestedSoFar)} שהושקעו.`
-        : `זו אינה הדירה הראשונה ולכן אין פטור ממס שבח. באותה נקודה הרווח המצטבר ${formatPercentDirect(exit.row.totalReturnPct)}.`,
+        ? `באותה נקודה הרווח המצטבר ${formatPercentDirect(exit.row.totalReturnPct)} על ${formatCompactILS(exit.row.totalInvestedSoFar)} שהושקעו, והמכירה פטורה ממס שבח. מכירה מוקדמת יותר חייבת במס ולכן התשואה שם נמוכה.`
+        : `באותה נקודה הרווח המצטבר ${formatPercentDirect(exit.row.totalReturnPct)} על ${formatCompactILS(exit.row.totalInvestedSoFar)} שהושקעו. המכירה שם חייבת במס שבח.`,
     })
   }
 
