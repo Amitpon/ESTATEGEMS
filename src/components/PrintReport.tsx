@@ -76,7 +76,7 @@ export function PrintReport({ analysis }: { analysis: AnalysisResult }) {
   const exit = findKeyExitPoint(a.saleSchedule)
   const rows = pickRows(a.saleSchedule, exit?.row ?? null)
   const insights = buildInsights(a)
-  const totalInterest = a.mortgage.combinedRows.reduce((s, r) => s + r.interest, 0)
+  const totalInterest = a.mortgage.totalInterest
 
   // התוויות מגיעות מהמנוע, כדי שלא יסטו ממה שמוצג במסך.
   const scenarios = [a.scenarios.low, a.scenarios.central, a.scenarios.high]
@@ -84,7 +84,10 @@ export function PrintReport({ analysis }: { analysis: AnalysisResult }) {
   return (
     // מוסתר על המסך, מופיע רק בהדפסה.
     <div hidden data-print-report className="text-[10pt] text-black">
-      <h1 className="text-[16pt] font-bold">ניתוח כדאיות דירה להשקעה</h1>
+      <div className="flex items-center gap-2">
+        <img src="/logo.png" alt="" className="h-9 w-9 rounded object-cover" />
+        <h1 className="text-[16pt] font-bold">ניתוח כדאיות דירה להשקעה</h1>
+      </div>
       <p className="mt-0.5 text-[9pt] text-slate-600">
         הופק ב-<Num>{new Intl.DateTimeFormat('he-IL').format(new Date())}</Num>. הכלי
         אינו מהווה ייעוץ מס, משכנתאות או השקעות.

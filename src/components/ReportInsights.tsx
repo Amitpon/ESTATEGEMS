@@ -66,9 +66,9 @@ export function buildInsights(a: AnalysisResult): Insight[] {
   }
 
   // 3. עלות הריבית לאורך חיי ההלוואה.
-  const totalInterest = a.mortgage.combinedRows.reduce((s, r) => s + r.interest, 0)
+  const totalInterest = a.mortgage.totalInterest
   if (totalInterest > 0) {
-    const totalPaid = a.mortgage.combinedRows.reduce((s2, r) => s2 + r.payment, 0)
+    const totalPaid = a.mortgage.totalPaid
     const share = totalPaid > 0 ? (totalInterest / totalPaid) * 100 : 0
     out.push({
       tone: 'neutral',

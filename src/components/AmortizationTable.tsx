@@ -69,8 +69,8 @@ export function AmortizationTable({ analysis }: { analysis: AnalysisResult }) {
   const safePage = Math.min(page, pages - 1)
   const visible = rows.slice(safePage * PAGE, safePage * PAGE + PAGE)
 
-  const totalInterest = monthly.reduce((a, r) => a + r.interest, 0)
-  const totalPaid = monthly.reduce((a, r) => a + r.payment, 0)
+  const totalInterest = analysis.mortgage.totalInterest
+  const totalPaid = analysis.mortgage.totalPaid
 
   const switchUnit = (u: 'year' | 'month') => {
     setUnit(u)
