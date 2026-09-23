@@ -12,6 +12,7 @@
 import type { AnalysisResult } from '@/lib/calc';
 import type { PropertyInput } from '@/types/property';
 import { formatILS, formatPercentDirect } from '@/lib/format';
+import type { MarketInsights } from '@/lib/market/insights';
 
 /** תור אחד בשיחה. */
 export interface ShimshonTurn {
@@ -39,6 +40,12 @@ function metricLine(label: string, value: number, unit: 'ils' | 'pct'): string {
 export function buildShimshonContext(
   input: PropertyInput,
   analysis: AnalysisResult,
+  /**
+   * נתוני שוק שכונתיים, אופציונליים - קיימים רק אם המשתמש בחר כתובת
+   * ויש מספיק עסקאות בסביבה. `undefined` מוחלט אם אין; שמשון פשוט לא
+   * יודע ולא יזכיר שכונה, בהתאם לעיקרון 4 - אין מספר בלי מקור.
+   */
+  market?: { insights: MarketInsights; subjectPricePerSqm: number },
 ): string {
   const { cashflow, metrics, equity, mortgage, purchaseTax, rentalTax } = analysis;
   const parts: string[] = [];
@@ -147,6 +154,30 @@ export function buildShimshonContext(
             `- ${s.label} (${s.dueDate}): ${formatILS(s.payableAmount)}${s.indexed ? ` כולל הצמדה של ${formatILS(s.indexationAmount)}` : ''}`,
         ),
         `- סך לתשלום: ${formatILS(ps.totalPayable)}`,
+      ].join('\n'),
+    );
+  }
+
+  if (market) {
+    const { insights, subjectPricePerSqm } = market;
+    const deviationPct =
+      insights.medianPricePerSqm.value > 0
+        ? Math.round(
+            ((subjectPricePerSqm - insights.medianPricePerSqm.value) /
+              insights.medianPricePerSqm.value) *
+              100,
+          )
+        : 0;
+    parts.push(
+      [
+        '## נתוני שוק בשכונה (מקור: רשות המסים דרך govmap.gov.il)',
+        `- חציון מחיר למ"ר: ${formatILS(insights.medianPricePerSqm.value)}, נכון ל-${insights.medianPricePerSqm.asOf}`,
+        `- מבוסס על ${insights.dealCount} עסקאות בין ${insights.dateRange.from} ל-${insights.dateRange.to}`,
+        `- מחיר למ"ר של הנכס הנבדק: ${formatILS(subjectPricePerSqm)}, סטייה מהחציון: ${deviationPct >= 0 ? '+' : ''}${deviationPct}%`,
+        insights.trend
+          ? `- מגמה: ${insights.trend.label}`
+          : '- אין מספיק נתונים כדי לתאר מגמה',
+        '- זהו תיאור של עסקאות שנסגרו בעבר, לא תחזית. אל תשתמש בזה כדי לנבא מחירים עתידיים.',
       ].join('\n'),
     );
   }
