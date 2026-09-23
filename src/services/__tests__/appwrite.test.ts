@@ -21,11 +21,11 @@ const accountMock = {
   create: vi.fn(),
   deleteSession: vi.fn(),
 }
-const databasesMock = {
-  createDocument: vi.fn(),
-  updateDocument: vi.fn(),
-  listDocuments: vi.fn(),
-  deleteDocument: vi.fn(),
+const tablesDBMock = {
+  createRow: vi.fn(),
+  updateRow: vi.fn(),
+  listRows: vi.fn(),
+  deleteRow: vi.fn(),
 }
 
 vi.mock('appwrite', () => {
@@ -42,8 +42,8 @@ vi.mock('appwrite', () => {
     Account: vi.fn(function Account() {
       return accountMock
     }),
-    Databases: vi.fn(function Databases() {
-      return databasesMock
+    TablesDB: vi.fn(function TablesDB() {
+      return tablesDBMock
     }),
     ID: { unique: () => 'generated-id' },
     Permission: {
@@ -87,14 +87,30 @@ beforeEach(() => {
   vi.resetModules()
   vi.unstubAllEnvs()
   Object.values(accountMock).forEach((fn) => fn.mockReset())
-  Object.values(databasesMock).forEach((fn) => fn.mockReset())
+  Object.values(tablesDBMock).forEach((fn) => fn.mockReset())
 })
 
 afterEach(() => {
   vi.unstubAllEnvs()
 })
 
+/**
+ * מדמה "לא מוגדר" בזדון - יש `.env` אמיתי בפיתוח עם ערכי Appwrite אמיתיים,
+ * ו-`vi.unstubAllEnvs()` מחזיר לערכים הטעונים מהקובץ, לא ל-undefined.
+ * חובה לדרוס אותם במפורש לריק כדי לבדוק את מצב "לא מחובר".
+ */
+function stubUnconfigured() {
+  vi.stubEnv('VITE_APPWRITE_ENDPOINT', '')
+  vi.stubEnv('VITE_APPWRITE_PROJECT_ID', '')
+  vi.stubEnv('VITE_APPWRITE_DATABASE_ID', '')
+  vi.stubEnv('VITE_APPWRITE_PROPERTIES_COLLECTION_ID', '')
+}
+
 describe('appwrite - לא מוגדר (אין משתני סביבה)', () => {
+  beforeEach(() => {
+    stubUnconfigured()
+  })
+
   it('isAppwriteConfigured מחזיר false', async () => {
     const { isAppwriteConfigured } = await import('../appwrite')
     expect(isAppwriteConfigured()).toBe(false)
@@ -184,8 +200,8 @@ describe('appwrite - מוגדר', () => {
   describe('saveProperty - הרשאות מסמך', () => {
     it('מגבילה קריאה/עדכון/מחיקה ל-Role.user(userId) של הבעלים בלבד, לא Role.any()', async () => {
       stubConfigured()
-      databasesMock.createDocument.mockResolvedValue({
-        $id: 'doc1',
+      tablesDBMock.createRow.mockResolvedValue({
+        $id: 'row1',
         $updatedAt: '2026-09-23T00:00:00.000Z',
         label: 'הדירה שלי',
         input: JSON.stringify(baseInput()),
@@ -194,7 +210,7 @@ describe('appwrite - מוגדר', () => {
       const res = await saveProperty('owner-1', 'הדירה שלי', baseInput())
 
       expect(res.ok).toBe(true)
-      const permissions = databasesMock.createDocument.mock.calls[0]?.[4] as string[]
+      const permissions = tablesDBMock.createRow.mock.calls[0]?.[4] as string[]
       expect(permissions).toEqual([
         'read(user:owner-1)',
         'update(user:owner-1)',
@@ -203,30 +219,30 @@ describe('appwrite - מוגדר', () => {
       expect(permissions.every((p) => !p.includes('any('))).toBe(true)
     })
 
-    it('עם existingId קוראת ל-updateDocument במקום ליצור מסמך חדש', async () => {
+    it('עם existingId קוראת ל-updateRow במקום ליצור שורה חדשה', async () => {
       stubConfigured()
-      databasesMock.updateDocument.mockResolvedValue({
-        $id: 'doc1',
+      tablesDBMock.updateRow.mockResolvedValue({
+        $id: 'row1',
         $updatedAt: '2026-09-23T00:00:00.000Z',
         label: 'עודכן',
         input: JSON.stringify(baseInput()),
       })
       const { saveProperty } = await import('../appwrite')
-      const res = await saveProperty('owner-1', 'עודכן', baseInput(), 'doc1')
+      const res = await saveProperty('owner-1', 'עודכן', baseInput(), 'row1')
 
       expect(res.ok).toBe(true)
-      expect(databasesMock.updateDocument).toHaveBeenCalledWith(
+      expect(tablesDBMock.updateRow).toHaveBeenCalledWith(
         'db-1',
         'col-1',
-        'doc1',
+        'row1',
         expect.objectContaining({ label: 'עודכן' }),
       )
-      expect(databasesMock.createDocument).not.toHaveBeenCalled()
+      expect(tablesDBMock.createRow).not.toHaveBeenCalled()
     })
 
     it('כשל רשת חוזר כ-Result שגוי, לא נזרק', async () => {
       stubConfigured()
-      databasesMock.createDocument.mockRejectedValue(new Error('network down'))
+      tablesDBMock.createRow.mockRejectedValue(new Error('network down'))
       const { saveProperty } = await import('../appwrite')
       const res = await saveProperty('owner-1', 'x', baseInput())
       expect(res.ok).toBe(false)
@@ -234,11 +250,11 @@ describe('appwrite - מוגדר', () => {
     })
   })
 
-  it('listProperties ממפה ומפענחת את שדה input מכל מסמך', async () => {
+  it('listProperties ממפה ומפענחת את שדה input מכל שורה', async () => {
     stubConfigured()
     const input = baseInput()
-    databasesMock.listDocuments.mockResolvedValue({
-      documents: [
+    tablesDBMock.listRows.mockResolvedValue({
+      rows: [
         { $id: 'd1', $updatedAt: '2026-09-23T00:00:00.000Z', label: 'א', input: JSON.stringify(input) },
         { $id: 'd2', $updatedAt: '2026-09-22T00:00:00.000Z', label: 'ב', input: JSON.stringify(input) },
       ],
@@ -252,12 +268,12 @@ describe('appwrite - מוגדר', () => {
     }
   })
 
-  it('deleteProperty קוראת ל-deleteDocument עם ה-id הנכון', async () => {
+  it('deleteProperty קוראת ל-deleteRow עם ה-id הנכון', async () => {
     stubConfigured()
-    databasesMock.deleteDocument.mockResolvedValue({})
+    tablesDBMock.deleteRow.mockResolvedValue({})
     const { deleteProperty } = await import('../appwrite')
-    const res = await deleteProperty('doc-9')
+    const res = await deleteProperty('row-9')
     expect(res.ok).toBe(true)
-    expect(databasesMock.deleteDocument).toHaveBeenCalledWith('db-1', 'col-1', 'doc-9')
+    expect(tablesDBMock.deleteRow).toHaveBeenCalledWith('db-1', 'col-1', 'row-9')
   })
 })

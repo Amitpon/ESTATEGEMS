@@ -11,9 +11,9 @@
  * ב-package.json שלהם כנראה שובר tree-shaking, אז מניחים שזה המחיר המלא
  * וטוענים רק על-פי דרישה.
  *
- * הרשאות: כל מסמך ב-collection נשמר עם $permissions שמגבילות קריאה/כתיבה
+ * הרשאות: כל שורה בטבלה נשמרת עם $permissions שמגבילות קריאה/כתיבה
  * לבעלים בלבד (Permission.read/update/delete עם Role.user(userId)), כדי
- * שמשתמש א' לא יוכל לקרוא נתונים של ב' גם אם ה-collection-level מוגדר רחב יותר.
+ * שמשתמש א' לא יוכל לקרוא נתונים של ב' גם אם הרשאות הטבלה מוגדרות רחב יותר.
  */
 
 import type { PropertyInput } from '@/types/property'
@@ -57,13 +57,20 @@ function loadModule(): Promise<AppwriteModule> {
 
 interface Sdk {
   readonly account: import('appwrite').Account
-  readonly databases: import('appwrite').Databases
+  readonly tablesDB: import('appwrite').TablesDB
   readonly mod: AppwriteModule
 }
 
 let sdkPromise: Promise<Sdk> | null = null
 
-/** זורק אם Appwrite לא מוגדר - כל קריאה ציבורית בקובץ הזה בודקת isAppwriteConfigured קודם. */
+/**
+ * זורק אם Appwrite לא מוגדר - כל קריאה ציבורית בקובץ הזה בודקת isAppwriteConfigured קודם.
+ *
+ * הפרויקט נוצר עם ה-Tables feature החדש של Appwrite (קונסולה מציגה
+ * "Table"/"Rows"/"Columns" ולא "Collection"/"Documents"/"Attributes") - לכן
+ * `TablesDB`, לא `Databases`. שני ה-API-ים קיימים ב-SDK אבל מדברים לנתיבי
+ * שרת שונים (`/tablesdb/...` מול `/databases/...`) ולא ניתנים להחלפה.
+ */
 function getSdk(): Promise<Sdk> {
   if (sdkPromise) return sdkPromise
   const config = readConfig()
@@ -71,7 +78,7 @@ function getSdk(): Promise<Sdk> {
 
   sdkPromise = loadModule().then((mod) => {
     const client = new mod.Client().setEndpoint(config.endpoint).setProject(config.projectId)
-    return { account: new mod.Account(client), databases: new mod.Databases(client), mod }
+    return { account: new mod.Account(client), tablesDB: new mod.TablesDB(client), mod }
   })
   return sdkPromise
 }
@@ -163,16 +170,16 @@ export async function saveProperty(
   if (!config) return { ok: false, error: { code: 'NOT_CONFIGURED', message: 'Appwrite אינו מוגדר' } }
 
   try {
-    const { databases, mod } = await getSdk()
+    const { tablesDB, mod } = await getSdk()
     const permissions = [
       mod.Permission.read(mod.Role.user(userId)),
       mod.Permission.update(mod.Role.user(userId)),
       mod.Permission.delete(mod.Role.user(userId)),
     ]
     const data = { label, input: JSON.stringify(input) }
-    const doc = existingId
-      ? await databases.updateDocument(config.databaseId, config.propertiesCollectionId, existingId, data)
-      : await databases.createDocument(
+    const row = existingId
+      ? await tablesDB.updateRow(config.databaseId, config.propertiesCollectionId, existingId, data)
+      : await tablesDB.createRow(
           config.databaseId,
           config.propertiesCollectionId,
           mod.ID.unique(),
@@ -182,10 +189,10 @@ export async function saveProperty(
     return {
       ok: true,
       data: {
-        id: doc.$id,
-        label: doc['label'] as string,
-        input: JSON.parse(doc['input'] as string) as PropertyInput,
-        updatedAt: doc.$updatedAt,
+        id: row.$id,
+        label: row['label'] as string,
+        input: JSON.parse(row['input'] as string) as PropertyInput,
+        updatedAt: row.$updatedAt,
       },
     }
   } catch (err) {
@@ -198,14 +205,14 @@ export async function listProperties(): Promise<AppwriteResult<readonly SavedPro
   if (!config) return { ok: false, error: { code: 'NOT_CONFIGURED', message: 'Appwrite אינו מוגדר' } }
 
   try {
-    const { databases } = await getSdk()
-    // ללא queries - permissions ברמת מסמך כבר מסננות רק את המסמכים של המשתמש המחובר.
-    const res = await databases.listDocuments(config.databaseId, config.propertiesCollectionId)
-    const items = res.documents.map((doc) => ({
-      id: doc.$id,
-      label: doc['label'] as string,
-      input: JSON.parse(doc['input'] as string) as PropertyInput,
-      updatedAt: doc.$updatedAt,
+    const { tablesDB } = await getSdk()
+    // ללא queries - permissions ברמת שורה כבר מסננות רק את השורות של המשתמש המחובר.
+    const res = await tablesDB.listRows(config.databaseId, config.propertiesCollectionId)
+    const items = res.rows.map((row) => ({
+      id: row.$id,
+      label: row['label'] as string,
+      input: JSON.parse(row['input'] as string) as PropertyInput,
+      updatedAt: row.$updatedAt,
     }))
     return { ok: true, data: items }
   } catch (err) {
@@ -218,8 +225,8 @@ export async function deleteProperty(id: string): Promise<AppwriteResult<void>> 
   if (!config) return { ok: false, error: { code: 'NOT_CONFIGURED', message: 'Appwrite אינו מוגדר' } }
 
   try {
-    const { databases } = await getSdk()
-    await databases.deleteDocument(config.databaseId, config.propertiesCollectionId, id)
+    const { tablesDB } = await getSdk()
+    await tablesDB.deleteRow(config.databaseId, config.propertiesCollectionId, id)
     return { ok: true, data: undefined }
   } catch (err) {
     return { ok: false, error: toError(err) }
