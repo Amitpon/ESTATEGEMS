@@ -30,6 +30,7 @@ export * from './payment-schedule';
 export * from './projection';
 export * from './purchase-tax';
 export * from './rental-tax';
+export * from './sensitivity';
 export * from './tax-data';
 
 /** תוצאת הניתוח המלאה. */
