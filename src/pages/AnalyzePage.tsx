@@ -1,22 +1,23 @@
 import { useState } from 'react'
-import { usePropertyAnalysis } from '@/hooks/usePropertyAnalysis'
+import { Link } from 'wouter'
+import type { PropertyAnalysis } from '@/hooks/usePropertyAnalysis'
 import { InputPage } from '@/pages/InputPage'
 import { ResultsPage } from '@/pages/ResultsPage'
 import { ShimshonChat } from '@/components/ShimshonChat'
 import { PrintReport } from '@/components/PrintReport'
 import { AuthButton } from '@/components/AuthButton'
+import { isAppwriteConfigured } from '@/services/appwrite'
 
 /**
- * מסך הניתוח הראשי - המסלול היחיד היום. header, ניווט בין שני השלבים,
- * וטעינת שני ה-pages. כל ה-state והחישוב יושבים ב-`usePropertyAnalysis`;
- * כל התוכן הוויזואלי יושב ב-`InputPage` ו-`ResultsPage`.
+ * מסך הניתוח הראשי - header, ניווט בין שני השלבים, וטעינת שני ה-pages.
+ * `analysis` מגיע מ-`App.tsx` (לא נוצר כאן) כדי ש-/properties יוכל
+ * לטעון נכס שמור לתוך אותו state ולחזור לכאן.
  */
-export function AnalyzePage() {
+export function AnalyzePage({ analysis }: { analysis: PropertyAnalysis }) {
   // במובייל מוצג שלב אחד בכל רגע - הכרעת בעל המוצר, כדי שלא צריך לגלול
   // מאות פיקסלים כדי לראות תוצאה. מ-sm ומעלה שני הטורים גלויים יחד
   // וה-state הזה חסר משמעות (ראה `sm:block` למטה).
   const [step, setStep] = useState<'input' | 'results'>('input')
-  const analysis = usePropertyAnalysis()
 
   return (
     <div className="min-h-dvh bg-[var(--color-muted)] pb-16 text-[var(--color-foreground)]">
@@ -33,6 +34,14 @@ export function AnalyzePage() {
             <span className="hidden rounded-full bg-[var(--color-accent)] px-3 py-1 text-xs font-medium text-[var(--color-primary)] sm:inline">
               הנתונים נשמרים במכשיר שלך בלבד
             </span>
+            {isAppwriteConfigured() && (
+              <Link
+                href="/properties"
+                className="min-h-[44px] flex items-center rounded-full border border-[var(--color-border)] px-4 py-2 text-sm font-medium text-[var(--color-foreground)] transition hover:bg-[var(--color-muted)]"
+              >
+                הנכסים שלי
+              </Link>
+            )}
             <AuthButton />
           </div>
         </div>

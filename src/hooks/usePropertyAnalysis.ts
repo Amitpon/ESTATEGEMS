@@ -29,6 +29,11 @@ export function usePropertyAnalysis() {
   // שיטת הסילוקין. המנוע תמך בשתיהן מההתחלה, פשוט לא היה בורר.
   const [amortization, setAmortization] = useState<AmortizationKind>('spitzer')
 
+  // מזהה השורה בענן אם הנכס הזה נטען מ-/properties או כבר נשמר בסשן הזה.
+  // null = "עדיין לא שמור בכלל" - saveProperty ייצור שורה חדשה. אחרת -
+  // שמירות חוזרות מעדכנות את אותה שורה במקום ליצור כפילויות.
+  const [currentPropertyId, setCurrentPropertyId] = useState<string | null>(null)
+
   const [panel, setPanel] = useState<AssumptionsPanelValues>({
     appreciationPct: 3,
     rentGrowthPct: 2,
@@ -173,6 +178,33 @@ export function usePropertyAnalysis() {
     return buildShimshonContext(result.input, result.data, market)
   }, [result, marketAnchor.status, price, sizeSqm])
 
+  /**
+   * טוען נכס שמור חזרה לתוך הטופס - נקרא ממסך /properties.
+   *
+   * לא כל שדות ה-PropertyInput משוחזרים - רק אלה ש-usePropertyAnalysis
+   * בעצמו מנהל (השדות הגרעיניים). לוח תשלומים, הוצאות מותאמות ועלויות
+   * רכישה מפורטות חוזרים לברירת המחדל. זה מספיק לגרסה ראשונה של "טען
+   * וערוך" - לא איבוד מידע קריטי, כי המשתמש רואה מיד את התוצאה ויכול
+   * לתקן.
+   */
+  function loadSavedProperty(input: PropertyInput, id: string) {
+    setPrice(input.property.price)
+    setSizeSqm(input.property.sizeSqm)
+    setMonthlyRent(input.income.monthlyRent)
+    const downPayment =
+      input.financing.downPayment ??
+      input.property.price * (1 - (input.financing.ltvPct ?? 0) / 100)
+    setEquityPct(input.property.price > 0 ? (downPayment / input.property.price) * 100 : 0)
+    const track = input.financing.tracks[0]
+    if (track) {
+      setAnnualRatePct(track.annualRatePct)
+      setTermYears(Math.round(track.termMonths / 12))
+      setAmortization(track.amortization)
+    }
+    setIsSingleApartment(input.tax.isSingleApartment)
+    setCurrentPropertyId(id)
+  }
+
   return {
     price, setPrice,
     monthlyRent, setMonthlyRent,
@@ -187,6 +219,8 @@ export function usePropertyAnalysis() {
     result,
     shimshonContext,
     marketAnchor,
+    currentPropertyId, setCurrentPropertyId,
+    loadSavedProperty,
   }
 }
 

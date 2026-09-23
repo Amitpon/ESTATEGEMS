@@ -56,11 +56,14 @@ export function ResultsPage({
     if (!user || !result.ok) return
     setIsSaving(true)
     const label = `${result.input.property.city || 'נכס'} - ${formatCompactILS(result.input.property.price)}`
-    const res = await saveProperty(user.id, label, result.input)
+    // existingId מגיע מ-currentPropertyId - אם הנכס כבר נטען/נשמר בסשן הזה,
+    // עדכון באותה שורה במקום כפילות. ראה usePropertyAnalysis.ts.
+    const res = await saveProperty(user.id, label, result.input, analysis.currentPropertyId ?? undefined)
     setIsSaving(false)
     if (res.ok) {
       setIsSaved(true)
       setLastSaved(new Date())
+      analysis.setCurrentPropertyId(res.data.id)
     }
   }
 

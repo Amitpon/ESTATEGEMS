@@ -1,21 +1,24 @@
 import { Route, Switch } from 'wouter'
 import { AnalyzePage } from '@/pages/AnalyzePage'
+import { PropertiesPage } from '@/pages/PropertiesPage'
+import { usePropertyAnalysis } from '@/hooks/usePropertyAnalysis'
 
 /**
- * שכבת הניתוב. היום יש מסלול יחיד - ניתוח נכס בודד.
- *
- * למה בכל זאת router ולא רק `<AnalyzePage />`: שלב ב בתוכנית (Appwrite,
- * auth, שמירת נכסים והשוואה) דורש מסכי `/login` ו-`/properties` שיושבים
- * כאן. בונים את השלד עכשיו כדי שמסך ההתחברות לא ידרוש רה-ארגון נוסף.
+ * שכבת הניתוב. `usePropertyAnalysis` יושב כאן, לא ב-`AnalyzePage`, כי
+ * `/properties` צריך גישה לאותו state - "פתח לעריכה" בטעינת נכס שמור
+ * מזין את הטופס וחוזר ל-`/`, ואי אפשר לזה לעבוד עם שני hooks נפרדים.
  *
  * `Route` לא-תואם נופל חזרה ל-`AnalyzePage` - אין עדיין מסך 404 ייעודי,
  * וזה עדיף על מסך ריק.
  */
 export default function App() {
+  const analysis = usePropertyAnalysis()
+
   return (
     <Switch>
-      <Route path="/" component={AnalyzePage} />
-      <Route component={AnalyzePage} />
+      <Route path="/properties" component={() => <PropertiesPage analysis={analysis} />} />
+      <Route path="/" component={() => <AnalyzePage analysis={analysis} />} />
+      <Route component={() => <AnalyzePage analysis={analysis} />} />
     </Switch>
   )
 }
