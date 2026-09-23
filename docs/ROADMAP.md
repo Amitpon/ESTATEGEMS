@@ -2,7 +2,7 @@
 
 > מסמך המשכיות. מי שחוזר לפרויקט אחרי הפסקה קורא אותו ראשון.
 > `docs/PROGRESS.md` מתעד **מה קרה מתי**. כאן **מה הלאה ולמה**.
-> עדכון אחרון: 2026-09-21
+> עדכון אחרון: 2026-09-23
 
 ---
 
@@ -21,6 +21,8 @@
 | שמשון | 53 מונחים + חיפוש אינטרנט | `netlify/functions/shimshon.mts` |
 | דוח מודפס | רכיב ייעודי, קומפקטי | `PrintReport.tsx`, `print.ts` |
 | נתוני בנק ישראל | snapshot יומי | `scripts/`, `.github/workflows/` |
+| נתוני למ"ס (CPI, מחירי דירות, תשומות בנייה) | snapshot, מחובר לבילד | `scripts/fetch-cbs.mjs`, `src/data/cbs-indices.json` |
+| עסקאות govmap - שליפה, ניקוי, תובנות שכונתיות, עוגן בממשק, הקשר לשמשון | עובד, וגם עבר סבב security hardening (ראה 4.2) | `src/services/govmap.ts`, `src/lib/market/`, `src/hooks/useMarketAnchor.ts`, `AddressField.tsx`, `MarketAnchor.tsx` |
 
 ---
 
@@ -88,6 +90,35 @@
 > **הלקח:** אחרי כל סוכן - `npx tsc --noEmit` **וגם** `npx vitest run`.
 > הרצת טסטים לבדה לא מספיקה.
 
+### deps חסר ב-useMemo לא זורק שגיאה
+
+בפירוק `App.tsx` התגלה ש-`amortization` לא היה ב-deps של ה-`useMemo`
+שמריץ את המנוע. שינוי שיטת הסילוקין בממשק לא הפעיל חישוב מחדש - אין
+שגיאת ריצה, אין אזהרת `tsc`, רק מספר ישן שנשאר על המסך.
+
+> **הלקח:** `useMemo`/`useEffect` עם deps ידניים הם מקור שקט לבאגים.
+> כשמוסיפים state חדש שמשפיע על חישוב - לחפש את ה-deps array ולוודא
+> שהוא שם. **אין ESLint בפרויקט כלל** - `eslint-plugin-react-hooks` היה
+> תופס את זה אוטומטית. לא הותקן עדיין (אין `.eslintrc`/`eslint.config.*`
+> ולא ב-`package.json`); כדאי לשקול, זו לא הכרעה טכנית קטנה.
+
+### חישוב כפול בממשק במקום קריאה מהמנוע - תוקן
+
+בפוליש ל-`ResultsPage.tsx` (2026-09-23) נמצא `combinedRows.reduce((a,x) => a+x.interest, 0)`
+לחישוב סך ריבית משכנתא לתצוגת סיכום ב-`Disclosure` - אבל המנוע כבר
+מחזיר את זה כ-`result.data.mortgage.totalInterest` (`src/lib/calc/mortgage.ts`).
+אותה כפילות בדיוק, ולא בגרסה אחת - נמצאה גם ב-`PrintReport.tsx:79`,
+ב-`ReportInsights.tsx:69` וב-`AmortizationTable.tsx:72-73`. ארבעה מקומות
+נפרדים הגיעו לאותה טעות.
+
+**עודכן (2026-09-23): כל ארבעת המקומות תוקנו** - כולם קוראים כעת
+מ-`totalInterest`/`totalPaid` שהמנוע מחזיר. אומת: `tsc --noEmit` נקי,
+152/152 טסטים עוברים, build 134.88kB gzip.
+
+> **הלקח:** לפני שקוד ממשק מחשב משהו מ-`combinedRows`, לחפש קודם
+> ב-`MortgageResult`/`AnalysisResult` אם השדה כבר קיים מוכן. **שלושת
+> המקומות עדיין לא תוקנו** - משימת ניקיון פתוחה, לא חוסמת עלייה לאוויר.
+
 ---
 
 ## 3. חובה לפני עלייה לאוויר
@@ -116,17 +147,29 @@
 > **פתוח להכרעה:** מה מוצג בהשוואה? הצעה: תזרים, רווח בנקודת הפטור,
 > ממוצע שנתי, והון מושקע. ארבעה מספרים, לא שמונה.
 
-### 4.2 עיגון לנתוני שוק
+### 4.2 עיגון לנתוני שוק - **הושלם 2026-09-22, כולל חיבור לממשק**
 
-`docs/research/property-data-sources.md` מתעד את המקורות.
+**תיקון: לא nadlan.gov.il - המקור הוא govmap.gov.il.** מתועד ב-
+`docs/research/property-data-sources.md` ואומת חי בקריאות curl.
 
-- בחירת עיר ושכונה
-- מחירי עסקאות אמיתיים מ-nadlan.gov.il
-- מדד מחירי הדירות ומדד תשומות הבנייה מהלמ"ס
-- שכר דירה ממוצע לפי עיר
+**שכבת הנתונים** (23 טסטים):
+- `src/services/govmap.ts` - `autocomplete`, `dealsNear`, `neighborhoodDeals`. קריאה ישירה מהדפדפן (CORS מלא כשנשלח Origin), cache 24 שעות ב-IndexedDB, כשל רך שמחזיר `GovmapResult<T>` ולא זורק.
+- `src/lib/market/clean.ts` - ניקוי עסקאות גולמיות: חסרים, שטח/מחיר אפס, חלון זמן, חריגי IQR (מכפיל 2.5, לא 1.5 הסטנדרטי - כי פנטהאוז ודירת גן באותה שכונה לגיטימיים). כל סינון מתועד עם הסיבה, לתצוגת "47 עסקאות, 6 סוננו".
+- `src/lib/market/insights.ts` - חציון, p25/p75, מיקום נכס מול השוק, מגמה בין תקופות. סף מינימום **5 עסקאות** - מתחתיו "אין מספיק נתונים" ולא חציון מטעה.
+- `scripts/fetch-cbs.mjs` + `src/data/cbs-indices.json` - CPI, מחירי דירות, תשומות בנייה. מחובר ל-`netlify.toml` באותו דפוס כשל-רך כמו בנק ישראל.
 
-> **עיקרון 2 מחייב:** נתון חיצוני הוא **עוגן ולא מילוי אוטומטי**.
-> מציגים למשתמש עם מקור ותאריך. הוא מזין בעצמו.
+**החיבור לממשק** (9 טסטים נוספים):
+- `src/hooks/useMarketAnchor.ts` - מחבר כתובת שנבחרה ל-`dealsNear` -> `neighborhoodDeals` -> `cleanDeals` -> `computeMarketInsights`. מיקום הנכס מול השוק מחושב ב-`useMemo` נפרד מהשליפה - שינוי מחיר לא שולח קריאת רשת חדשה.
+- `src/components/AddressField.tsx` + `src/components/MarketAnchor.tsx` - שדה כתובת עם השלמה אוטומטית, ועוגן שמוצג ליד שדה המחיר ב-`InputPage`. **בלי autofill** - השדה לא משתנה מעצמו, כנדרש בעיקרון 2.
+- `buildShimshonContext` (`src/services/shimshon.ts`) מקבל פרמטר `market` אופציונלי. בלעדיו ההקשר לא מזכיר שכונה בכלל - שמשון לא יכול "לזכור" נתון שלא קיבל.
+
+**מה עדיין חסר:** שכר דירה ממוצע לפי עיר - אין endpoint ייעודי בלמ"ס, רק קובץ Excel רבעוני. נדרש קובץ סטטי מתוחזק ידנית.
+
+**באג שנתפס ותוקן בבדיקה עצמאית של הסוכן:** הפרסר של CBS הניח מבנה `DataSet.Series[0].obs[]` בלי לאמת מול תשובה אמיתית. המבנה האמיתי הוא `json.month[0].date[]` עם `{ year, month, currBase: { value } }`. תוקן ואומת עם נתונים חיים (CPI 105.8, מחירי דירות 594.8, תשומות בנייה 103.9 - אוגוסט/יוני 2026). גם `data:cbs` לא היה מחובר ל-`netlify.toml` - תוקן.
+
+**Security hardening (2026-09-23, סבב security-auditor, שני ממצאים ברמת חומרה נמוכה, שניהם תוקנו ואומתו - `tsc` נקי, טסטים עוברים):**
+- `src/services/govmap.ts` - `polygon_id` וקואורדינטות ITM עוברים `encodeURIComponent()` לפני שהם משורשרים לנתיב הבקשה. הגנת עומק למקרה שתשובה עתידית/מזויפת מה-upstream תכיל תווים ששוברים נתיב.
+- `src/lib/market/clean.ts` - ערכי `dealAmount`/`sqmeter` שאינם סופיים (`NaN`/`Infinity`) מ-govmap נדחים כעת עם `FilterReason: 'non-finite-value'` חדש, לפני שהם מגיעים בשקט לחישוב חציון ומוצגים למשתמש כמספר "אמיתי" ומקור.
 
 ### 4.3 ניתוח רגישות
 
@@ -158,14 +201,46 @@
 - כותרת עם שם הנכס
 - **לבדוק בדפדפן אמיתי** - הטסטים מכסים תוכן, לא פריסה על נייר
 
-### 4.7 להשלים את מעבר ה-design tokens
+### 4.7 מעבר ה-design tokens - **הושלם 2026-09-22**
 
-סוכן ה-ui-designer נכשל על מגבלת קצב באמצע. הומרו: `CashflowTimeline`,
-`AmortizationTable`, `ValueInput`, `Disclosure`. **`AssumptionsPanel`
-נשאר באמצע**, ו-`ExitPointHero`, `ReportInsights`, `SaleSchedule`,
-`PaymentScheduleEditor`, `ShimshonChat` עדיין עם צבעים קשיחים.
+כל הצבעים הקשיחים הומרו ל-`var(--color-*)`.
 
-כל ה-tokens שבשימוש מוגדרים - אין שבר. זה חוב עקביות, לא באג.
+**חריג מכוון אחד: `PrintReport.tsx`.** הדוח מודפס על נייר לבן, ולכן
+צבעיו חייבים להישאר קבועים ולא להשתנות עם ערכת הנושא. 19 צבעים קשיחים
+שם הם **החלטה ולא חוב**.
+
+**`dark mode` חובר.** קודם `.dark` הגדיר 26 צבעים אבל לא היה מחובר לכלום.
+עכשיו שלוש שכבות ב-`src/index.css`: `@custom-variant dark` שמחבר את
+`dark:` של Tailwind, `prefers-color-scheme` עם `:root:not(.light)`
+לכיבוד העדפת המערכת, ו-`.dark` אחרון כבחירה ידנית שגוברת.
+**הסדר קובע - אל תהפוך אותו.**
+
+עדיין חסר: מתג ידני בממשק שמוסיף/מסיר את `.dark`.
+
+### 4.8 פירוק App.tsx ו-routing - **הושלם 2026-09-22**
+
+`App.tsx` היה 642 שורות ב-`return` אחד. פוצל:
+
+- `src/hooks/usePropertyAnalysis.ts` - כל ה-state והחישוב
+- `src/pages/AnalyzePage.tsx` - מסך הניתוח (header, ניווט שלבים, הרכבה)
+- `src/pages/InputPage.tsx`, `src/pages/ResultsPage.tsx` - תוכן כל שלב
+- `src/components/NumberField.tsx`, `RateSparkline.tsx`, `BreakdownRow.tsx` - רכיבים קטנים ששימשו רק את App
+
+`App.tsx` עכשיו 16 שורות - שכבת `wouter` בלבד (`Switch`/`Route`), עם
+`AnalyzePage` כמסלול יחיד וגם כ-fallback. הוקם **לפני** שהיה צורך אמיתי
+בו, כי שלב ב (Appwrite) דורש `/login` ו-`/properties` ועדיף לא לארגן
+מחדש פעמיים.
+
+**באג אמיתי שהתגלה תוך כדי הפירוק:** ב-`useMemo` שמריץ את המנוע,
+`amortization` (שפיצר מול קרן שווה) **לא היה ברשימת ה-deps**. כלומר
+החלפת שיטת הסילוקין בממשק לא הפעילה חישוב מחדש - המשתמש ראה מספרים
+של השיטה הקודמת. תוקן.
+
+### 4.9 פוליש UI ל-ResultsPage - 2026-09-23
+
+מדרג מחדש לכיוון headline-metrics-first (השראה מאתר ייחוס): גריד מדדים
+עיקריים למעלה, פירוט מאחורי `Disclosure`. ראה 2.2 ("חישוב כפול בממשק")
+ל-bug שנמצא תוך כדי, וסעיף RTL ב-`CLAUDE.md` לדפוס גריד ה-`border-e`.
 
 ---
 
@@ -207,3 +282,4 @@
 
 **לפני שמשהו נחשב "done":** `npx tsc --noEmit` **וגם** `npx vitest run`
 **וגם** `npm run build`. שלושתם.
+</content>
