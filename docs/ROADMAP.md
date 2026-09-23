@@ -23,6 +23,7 @@
 | נתוני בנק ישראל | snapshot יומי | `scripts/`, `.github/workflows/` |
 | נתוני למ"ס (CPI, מחירי דירות, תשומות בנייה) | snapshot, מחובר לבילד | `scripts/fetch-cbs.mjs`, `src/data/cbs-indices.json` |
 | עסקאות govmap - שליפה, ניקוי, תובנות שכונתיות, עוגן בממשק, הקשר לשמשון | עובד, וגם עבר סבב security hardening (ראה 4.2) | `src/services/govmap.ts`, `src/lib/market/`, `src/hooks/useMarketAnchor.ts`, `AddressField.tsx`, `MarketAnchor.tsx` |
+| Appwrite - auth (אימייל+גוגל) ושמירת נכסים בענן | עובד, אומת חי מול Appwrite Cloud אמיתי (curl smoke test, לא רק טסטים). **חסר UI לרשימת/השוואת נכסים שמורים - ראה 4.1** | `src/services/appwrite.ts` |
 
 ---
 
@@ -139,6 +140,10 @@
 ### 4.1 שמירה והשוואה (הערך הגבוה ביותר)
 
 `idb` כבר מותקן ולא בשימוש. `wouter` כבר מותקן ולא בשימוש.
+
+**עדכון 2026-09-23:** שכבת ה-save/load כבר קיימת ועובדת - `src/services/appwrite.ts`
+(`saveProperty`/`listProperties`/`deleteProperty`), אומת חי מול Appwrite Cloud. מה
+שחסר הוא רק ה-UI: מסך רשימה, בחירה, והשוואה. זה הפריט הבא.
 
 - שמירת נכס ל-IndexedDB, רשימת נכסים, טעינה
 - **השוואה בין עד 5 נכסים** - זה הפיצ'ר שהופך את הכלי מ"מחשבון" ל"כלי החלטה"
