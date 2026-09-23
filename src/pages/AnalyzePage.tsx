@@ -4,6 +4,7 @@ import { InputPage } from '@/pages/InputPage'
 import { ResultsPage } from '@/pages/ResultsPage'
 import { ShimshonChat } from '@/components/ShimshonChat'
 import { PrintReport } from '@/components/PrintReport'
+import { AuthButton } from '@/components/AuthButton'
 
 /**
  * מסך הניתוח הראשי - המסלול היחיד היום. header, ניווט בין שני השלבים,
@@ -28,9 +29,12 @@ export function AnalyzePage() {
               <p className="text-xs text-[var(--color-muted-foreground)]">ניתוח דירה להשקעה בישראל</p>
             </div>
           </div>
-          <span className="rounded-full bg-[var(--color-accent)] px-3 py-1 text-xs font-medium text-[var(--color-primary)]">
-            הנתונים נשמרים במכשיר שלך בלבד
-          </span>
+          <div data-no-print className="flex items-center gap-3">
+            <span className="hidden rounded-full bg-[var(--color-accent)] px-3 py-1 text-xs font-medium text-[var(--color-primary)] sm:inline">
+              הנתונים נשמרים במכשיר שלך בלבד
+            </span>
+            <AuthButton />
+          </div>
         </div>
       </header>
 

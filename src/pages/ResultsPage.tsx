@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Disclosure } from '@/components/ui/Disclosure'
 import { BreakdownRow } from '@/components/BreakdownRow'
@@ -7,9 +8,11 @@ import { CashflowTimeline } from '@/components/CashflowTimeline'
 import { AmortizationTable } from '@/components/AmortizationTable'
 import { SaleSchedule } from '@/components/SaleSchedule'
 import { RateSensitivityTable } from '@/components/RateSensitivityTable'
+import { SyncStatus } from '@/components/SyncStatus'
 import { findKeyExitPoint } from '@/lib/calc'
 import { formatCompactILS, formatILS, formatPercentDirect } from '@/lib/format'
 import { printReport } from '@/lib/print'
+import { getCurrentUser, isAppwriteConfigured, saveProperty, type AppwriteUser } from '@/services/appwrite'
 import type { PropertyAnalysis } from '@/hooks/usePropertyAnalysis'
 import type { AssumptionsPanelValues } from '@/components/AssumptionsPanel'
 
@@ -33,10 +36,45 @@ export function ResultsPage({
 }) {
   const { result } = analysis
 
+  // שמירה בענן - תוסף אופציונלי, לא שער. משתמש שלא מחובר לא רואה את זה בכלל.
+  const [user, setUser] = useState<AppwriteUser | null>(null)
+  const [isSaved, setIsSaved] = useState(false)
+  const [lastSaved, setLastSaved] = useState<Date | undefined>(undefined)
+  const [isSaving, setIsSaving] = useState(false)
+
+  useEffect(() => {
+    if (!isAppwriteConfigured()) return
+    getCurrentUser().then(setUser)
+  }, [])
+
+  // נתון חדש (הנחות/קלט השתנו) = חוזר להיות "לא שמור" עד שמירה מחדש.
+  useEffect(() => {
+    setIsSaved(false)
+  }, [result])
+
+  async function handleSaveToCloud() {
+    if (!user || !result.ok) return
+    setIsSaving(true)
+    const label = `${result.input.property.city || 'נכס'} - ${formatCompactILS(result.input.property.price)}`
+    const res = await saveProperty(user.id, label, result.input)
+    setIsSaving(false)
+    if (res.ok) {
+      setIsSaved(true)
+      setLastSaved(new Date())
+    }
+  }
+
   return (
     <div className="space-y-3">
-      {/* כפתור הדפסה - מוסתר בהדפסה ממילא */}
-      <div data-no-print className="flex justify-end">
+      {/* כפתור הדפסה + סטטוס סנכרון - מוסתרים בהדפסה ממילא */}
+      <div data-no-print className="flex items-center justify-between gap-3">
+        <SyncStatus
+          user={user}
+          isSaved={isSaved}
+          lastSaved={lastSaved}
+          isSaving={isSaving}
+          onSave={() => void handleSaveToCloud()}
+        />
         <button
           type="button"
           onClick={() => printReport()}
