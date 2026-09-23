@@ -221,6 +221,17 @@ export function PropertiesPage({ analysis }: { analysis: PropertyAnalysis }) {
   )
 }
 
+function BackLink() {
+  return (
+    <Link
+      href="/"
+      className="mb-4 inline-flex min-h-[36px] items-center text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
+    >
+      → חזרה לניתוח
+    </Link>
+  )
+}
+
 function HeadlineStat({ label, value }: { label: string; value: string }) {
   return (
     <div>
