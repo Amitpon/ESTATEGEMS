@@ -23,7 +23,7 @@
 | נתוני בנק ישראל | snapshot יומי | `scripts/`, `.github/workflows/` |
 | נתוני למ"ס (CPI, מחירי דירות, תשומות בנייה) | snapshot, מחובר לבילד | `scripts/fetch-cbs.mjs`, `src/data/cbs-indices.json` |
 | עסקאות govmap - שליפה, ניקוי, תובנות שכונתיות, עוגן בממשק, הקשר לשמשון | עובד, וגם עבר סבב security hardening (ראה 4.2) | `src/services/govmap.ts`, `src/lib/market/`, `src/hooks/useMarketAnchor.ts`, `AddressField.tsx`, `MarketAnchor.tsx` |
-| Appwrite - auth (אימייל+גוגל) ושמירת נכסים בענן | עובד, אומת חי מול Appwrite Cloud אמיתי (curl smoke test, לא רק טסטים). **חסר UI לרשימת/השוואת נכסים שמורים - ראה 4.1** | `src/services/appwrite.ts` |
+| Appwrite - auth (אימייל+גוגל) ושמירת נכסים בענן | עובד, אומת חי מול Appwrite Cloud אמיתי (curl smoke test, לא רק טסטים). UI לרשימה/השוואה הושלם - ראה 4.1 | `src/services/appwrite.ts`, `src/pages/PropertiesPage.tsx` |
 
 ---
 
@@ -137,20 +137,29 @@
 
 ## 4. הבא בתור - מדורג לפי ערך
 
-### 4.1 שמירה והשוואה (הערך הגבוה ביותר)
+### 4.1 שמירה והשוואה - **הושלם 2026-09-23**
 
-`idb` כבר מותקן ולא בשימוש. `wouter` כבר מותקן ולא בשימוש.
+`idb` עדיין לא בשימוש (הושג ישירות דרך Appwrite). `wouter` עכשיו בשימוש אמיתי.
 
-**עדכון 2026-09-23:** שכבת ה-save/load כבר קיימת ועובדת - `src/services/appwrite.ts`
-(`saveProperty`/`listProperties`/`deleteProperty`), אומת חי מול Appwrite Cloud. מה
-שחסר הוא רק ה-UI: מסך רשימה, בחירה, והשוואה. זה הפריט הבא.
-
-- שמירת נכס ל-IndexedDB, רשימת נכסים, טעינה
-- **השוואה בין עד 5 נכסים** - זה הפיצ'ר שהופך את הכלי מ"מחשבון" ל"כלי החלטה"
-- ניווט עם `wouter` ל-4 מסכים
-
-> **פתוח להכרעה:** מה מוצג בהשוואה? הצעה: תזרים, רווח בנקודת הפטור,
-> ממוצע שנתי, והון מושקע. ארבעה מספרים, לא שמונה.
+- **`src/pages/PropertiesPage.tsx`** (חדש) - מסך `/properties`: רשימת נכסים
+  שמורים, בחירה של עד 5 להשוואה, "פתח לעריכה" (טוען את הנכס חזרה לטופס
+  וחוזר ל-`/`), ומחיקה. ארבעת מדדי הכרטיס/השוואה - לפי ההצעה שהייתה פתוחה
+  כאן: תזרים חודשי, הון מושקע, רווח בנקודת הפטור, תשואה שנתית ממוצעת.
+  נחשבים ישירות מ-`AnalysisResult` (בלי `combinedRows.reduce` - ראה הלקח
+  ב-CLAUDE.md), עם `defaultAssumptions()` כי `saveProperty` שומר רק
+  `PropertyInput` ולא את ההנחות. מגבלה ידועה, לא באג.
+- **`src/App.tsx`** - `usePropertyAnalysis()` הועלה מ-`AnalyzePage` לכאן,
+  כדי ששני המסכים (`/` ו-`/properties`) ישתפו את אותו state - "פתח לעריכה"
+  צריך להזין את הטופס ולחזור.
+- **`src/hooks/usePropertyAnalysis.ts`** - נוסף `currentPropertyId` +
+  `loadSavedProperty()`. הטעינה חלקית במכוון (רק השדות הגרעיניים שה-hook
+  מנהל) - לוח תשלומים והוצאות מותאמות חוזרים לברירת מחדל בגרסה הזו.
+- **תוקן באג**: `ResultsPage.tsx` (`handleSaveToCloud`) מעולם לא העביר
+  `existingId` ל-`saveProperty` - כל "שמור לענן" יצר שורה חדשה בענן במקום
+  לעדכן. עכשיו `currentPropertyId` נשמר ב-state ומועבר, כך ששמירות חוזרות
+  מעדכנות את אותה שורה.
+- שלושת השערים עברו: `tsc --noEmit` נקי, 168 טסטים (`vitest run`) עוברים,
+  `npm run build` עובר (123.86kB gzip JS - עדיין מתחת ליעד 174kB).
 
 ### 4.2 עיגון לנתוני שוק - **הושלם 2026-09-22, כולל חיבור לממשק**
 
