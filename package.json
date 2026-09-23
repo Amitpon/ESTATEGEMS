@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "data:boi": "node scripts/fetch-boi.mjs",
+    "data:cbs": "node scripts/fetch-cbs.mjs",
     "test:shimshon": "node --env-file-if-exists=.env scripts/test-shimshon.mjs",
     "smoke:shimshon": "node --env-file-if-exists=.env scripts/smoke-shimshon.mjs"
   },
