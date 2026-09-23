@@ -13,6 +13,7 @@ import { Slider } from '@/components/ui/Slider'
 import { ValueInput } from '@/components/ui/ValueInput'
 import { Card } from '@/components/ui/Card'
 import { formatPercentDirect } from '@/lib/format'
+import { getHousingPriceGrowth } from '@/services/cbs'
 import { PaymentScheduleEditor } from '@/components/PaymentScheduleEditor'
 import type { IsoDate, PaymentStage } from '@/types/property'
 import {
@@ -179,6 +180,10 @@ export function AssumptionsPanel({
     (v: AssumptionsPanelValues[K]) =>
       onChange(key, v)
 
+  // עוגן לסליידר עליית הערך - נתון היסטורי מהלמ"ס, לא ברירת מחדל נסתרת.
+  // המשתמש עדיין בוחר את ההנחה בעצמו (עיקרון 2 - עוגן, לא מילוי אוטומטי).
+  const housingGrowth = getHousingPriceGrowth()
+
   return (
     <div className="space-y-3">
       <Section
@@ -262,15 +267,26 @@ export function AssumptionsPanel({
         hint="כל מספר עתידי בכלי נגזר מכאן"
         defaultOpen
       >
-        <Slider
-          label="עליית ערך שנתית"
-          valueDisplay={formatPercentDirect(values.appreciationPct)}
-          min={0}
-          max={12}
-          step={0.5}
-          value={values.appreciationPct}
-          onChange={(e) => set('appreciationPct')(Number(e.target.value))}
-        />
+        <div>
+          <Slider
+            label="עליית ערך שנתית"
+            valueDisplay={formatPercentDirect(values.appreciationPct)}
+            min={0}
+            max={12}
+            step={0.5}
+            value={values.appreciationPct}
+            onChange={(e) => set('appreciationPct')(Number(e.target.value))}
+          />
+          {housingGrowth && (
+            <p className="mt-1 text-xs leading-relaxed text-[var(--color-muted-foreground)]">
+              עוגן: מדד מחירי הדירות של הלמ"ס עלה בממוצע{' '}
+              <span dir="ltr" className="font-medium tabular-nums text-[var(--color-foreground)]">
+                {formatPercentDirect(housingGrowth.value)}
+              </span>{' '}
+              בשנה, נכון ל-{housingGrowth.asOf}. זהו נתון היסטורי ולא תחזית - ההנחה שתזין היא שלך.
+            </p>
+          )}
+        </div>
         <Slider
           label="עליית שכר דירה שנתית"
           valueDisplay={formatPercentDirect(values.rentGrowthPct)}

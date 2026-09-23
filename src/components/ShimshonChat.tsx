@@ -84,7 +84,7 @@ export function ShimshonChat({ context }: Props) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-5 end-5 z-50 flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200"
+        className="fixed bottom-5 end-5 z-50 flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-[var(--color-primary)] focus:outline-none focus-visible:ring-4 focus-visible:ring-[var(--color-ring)]"
         style={{ bottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))' }}
         data-no-print
       >
@@ -96,12 +96,12 @@ export function ShimshonChat({ context }: Props) {
 
   return (
     <div data-no-print className="fixed inset-x-0 bottom-0 z-50 sm:inset-x-auto sm:end-5 sm:bottom-5 sm:w-[420px]">
-      <div className="flex max-h-[85dvh] flex-col overflow-hidden rounded-t-2xl border border-slate-200 bg-white shadow-2xl sm:max-h-[70dvh] sm:rounded-2xl">
-        <header className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
+      <div className="flex max-h-[85dvh] flex-col overflow-hidden rounded-t-2xl border border-[var(--color-border)] bg-[var(--color-card)] shadow-2xl sm:max-h-[70dvh] sm:rounded-2xl">
+        <header className="flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-muted)] px-4 py-3">
           <div>
-            <h2 className="text-sm font-semibold text-slate-900">שמשון</h2>
+            <h2 className="text-sm font-semibold text-[var(--color-foreground)]">שמשון</h2>
             {remaining !== null && (
-              <p className="text-xs text-slate-500 tabular-nums">
+              <p className="text-xs text-[var(--color-muted-foreground)] tabular-nums">
                 נותרו {remaining} מתוך {SHIMSHON_DAILY_LIMIT} שאלות היום
               </p>
             )}
@@ -110,27 +110,27 @@ export function ShimshonChat({ context }: Props) {
             type="button"
             onClick={() => setOpen(false)}
             aria-label="סגור את שמשון"
-            className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900"
+            className="rounded-lg p-2 text-[var(--color-muted-foreground)] transition hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]"
           >
             ✕
           </button>
         </header>
 
         <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
-          <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900">
+          <p className="rounded-xl bg-[var(--color-warning-bg)] px-3 py-2 text-xs leading-relaxed text-[var(--color-warning)]">
             {SHIMSHON_DISCLAIMER}
           </p>
 
           {turns.length === 0 && (
             <div className="space-y-2 pt-2">
-              <p className="text-xs font-medium text-slate-500">אפשר להתחיל מאחת מאלה:</p>
+              <p className="text-xs font-medium text-[var(--color-muted-foreground)]">אפשר להתחיל מאחת מאלה:</p>
               {STARTERS.map((s) => (
                 <button
                   key={s}
                   type="button"
                   onClick={() => void send(s)}
                   disabled={!context}
-                  className="block w-full rounded-xl border border-slate-200 px-3 py-2 text-start text-sm text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50 disabled:opacity-50"
+                  className="block w-full rounded-xl border border-[var(--color-border)] px-3 py-2 text-start text-sm text-[var(--color-foreground)] transition hover:border-[var(--color-ring)] hover:bg-[var(--color-accent)] disabled:opacity-50"
                 >
                   {s}
                 </button>
@@ -143,8 +143,8 @@ export function ShimshonChat({ context }: Props) {
               key={i}
               className={
                 t.role === 'user'
-                  ? 'ms-auto max-w-[85%] rounded-2xl bg-indigo-600 px-3 py-2 text-sm text-white'
-                  : 'me-auto max-w-[90%] rounded-2xl bg-slate-100 px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap text-slate-800'
+                  ? 'ms-auto max-w-[85%] rounded-2xl bg-[var(--color-primary)] px-3 py-2 text-sm text-white'
+                  : 'me-auto max-w-[90%] rounded-2xl bg-[var(--color-muted)] px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap text-[var(--color-foreground)]'
               }
             >
               {t.content || (streaming && i === turns.length - 1 ? 'חושב...' : '')}
@@ -152,7 +152,7 @@ export function ShimshonChat({ context }: Props) {
           ))}
 
           {error && (
-            <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-800">{error}</p>
+            <p className="rounded-xl bg-[var(--color-destructive-bg)] px-3 py-2 text-sm text-[var(--color-destructive)]">{error}</p>
           )}
         </div>
 
@@ -161,7 +161,7 @@ export function ShimshonChat({ context }: Props) {
             e.preventDefault()
             void send(draft)
           }}
-          className="flex items-center gap-2 border-t border-slate-200 bg-white px-3 py-3"
+          className="flex items-center gap-2 border-t border-[var(--color-border)] bg-[var(--color-card)] px-3 py-3"
           style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
         >
           <input
@@ -170,12 +170,12 @@ export function ShimshonChat({ context }: Props) {
             placeholder={context ? 'שאל על הנתונים שלך' : 'תקן את שגיאת החישוב קודם'}
             disabled={streaming || !context}
             maxLength={1000}
-            className="min-w-0 flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-50"
+            className="min-w-0 flex-1 rounded-xl border border-[var(--color-border)] px-3 py-2 text-sm outline-none focus:border-[var(--color-ring)] focus:ring-2 focus:ring-[var(--color-ring)] disabled:bg-[var(--color-muted)]"
           />
           <button
             type="submit"
             disabled={streaming || !draft.trim() || !context}
-            className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-40"
+            className="rounded-xl bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-primary)] disabled:opacity-40"
           >
             {streaming ? '...' : 'שלח'}
           </button>

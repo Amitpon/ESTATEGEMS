@@ -80,7 +80,7 @@ function SourceToggle({
   onChange: (v: FundingSource) => void
 }) {
   return (
-    <div className="flex overflow-hidden rounded-lg border border-slate-300 text-xs">
+    <div className="flex overflow-hidden rounded-lg border border-[var(--color-border)] text-xs">
       {(
         [
           ['equity', 'הון עצמי'],
@@ -94,8 +94,8 @@ function SourceToggle({
           onClick={() => onChange(key)}
           className={
             value === key
-              ? 'bg-indigo-600 px-3 py-1.5 text-white'
-              : 'px-3 py-1.5 text-slate-600'
+              ? 'bg-[var(--color-primary)] px-3 py-1.5 text-white'
+              : 'px-3 py-1.5 text-[var(--color-muted-foreground)]'
           }
         >
           {label}
@@ -205,7 +205,7 @@ export function PaymentScheduleEditor({
     <div className="space-y-4">
       <div>
         <h3 className="text-base font-semibold">התשלומים</h3>
-        <p className="mt-1 text-xs leading-relaxed text-slate-500">
+        <p className="mt-1 text-xs leading-relaxed text-[var(--color-muted-foreground)]">
           מתי כל תשלום יוצא, כמה אחוז ממחיר הנכס, ומאיפה הכסף מגיע. זה קובע את
           המכנה של התשואה: מכירה מוקדמת נמדדת מול ההון שהושקע עד אז בלבד.
         </p>
@@ -213,7 +213,7 @@ export function PaymentScheduleEditor({
 
       {isOffPlan && (
       <div>
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-[var(--color-foreground)]">
           תאריך אכלוס צפוי (טופס 4)
         </label>
         <input
@@ -221,30 +221,30 @@ export function PaymentScheduleEditor({
           dir="ltr"
           value={occupancyDate}
           onChange={(e) => onOccupancyDateChange(e.target.value)}
-          className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-start tabular-nums outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+          className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2 text-start tabular-nums outline-none focus:border-[var(--color-ring)] focus:ring-2 focus:ring-[var(--color-ring)]"
         />
-        <p className="mt-1 text-xs leading-relaxed text-slate-500">
+        <p className="mt-1 text-xs leading-relaxed text-[var(--color-muted-foreground)]">
           18 חודשי ההחזקה לפטור ממס שבח נספרים מכאן, לא מחתימת החוזה.{' '}
-          <span className="text-amber-700">הכלל לא אומת מול רשות המסים.</span>
+          <span className="text-[var(--color-warning)]">הכלל לא אומת מול רשות המסים.</span>
         </p>
       </div>
       )}
 
       <div className="space-y-1.5">
-        <span className="text-xs font-medium text-slate-600">התחל מתבנית</span>
+        <span className="text-xs font-medium text-[var(--color-muted-foreground)]">התחל מתבנית</span>
         <div className="flex flex-wrap gap-2">
           {TEMPLATES.filter((t) => !t.offPlanOnly || isOffPlan).map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => applyTemplate(t.id)}
-              className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs text-slate-700 hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700"
+              className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs text-[var(--color-foreground)] hover:border-[var(--color-ring)] hover:bg-[var(--color-accent)] hover:text-[var(--color-primary)]"
             >
               {t.label}
             </button>
           ))}
         </div>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-[var(--color-muted-foreground)]">
           התבנית מחליפה את מה שקיים. אחריה תתאים את התאריכים לחוזה שלך.
         </p>
       </div>
@@ -255,14 +255,14 @@ export function PaymentScheduleEditor({
             <input
               value={stage.label}
               onChange={(e) => update(i, { label: e.target.value })}
-              className="min-w-0 flex-1 rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-indigo-500"
+              className="min-w-0 flex-1 rounded-lg border border-[var(--color-border)] px-2 py-1.5 text-sm outline-none focus:border-[var(--color-ring)]"
             />
             <button
               type="button"
               onClick={() => move(i, -1)}
               disabled={i === 0}
               aria-label={`הזז את ${stage.label} למעלה`}
-              className="rounded-lg px-2 py-1.5 text-sm text-slate-500 hover:bg-slate-100 disabled:opacity-30"
+              className="rounded-lg px-2 py-1.5 text-sm text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] disabled:opacity-30"
             >
               ↑
             </button>
@@ -271,7 +271,7 @@ export function PaymentScheduleEditor({
               onClick={() => move(i, 1)}
               disabled={i === stages.length - 1}
               aria-label={`הזז את ${stage.label} למטה`}
-              className="rounded-lg px-2 py-1.5 text-sm text-slate-500 hover:bg-slate-100 disabled:opacity-30"
+              className="rounded-lg px-2 py-1.5 text-sm text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] disabled:opacity-30"
             >
               ↓
             </button>
@@ -279,7 +279,7 @@ export function PaymentScheduleEditor({
               type="button"
               onClick={() => onStagesChange(stages.filter((_, idx) => idx !== i))}
               aria-label={`מחק ${stage.label}`}
-              className="rounded-lg px-2 py-1.5 text-sm text-rose-600 hover:bg-rose-50"
+              className="rounded-lg px-2 py-1.5 text-sm text-[var(--color-destructive)] hover:bg-[var(--color-destructive-bg)]"
             >
               מחק
             </button>
@@ -287,17 +287,17 @@ export function PaymentScheduleEditor({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-medium text-slate-600">תאריך</label>
+              <label className="block text-xs font-medium text-[var(--color-muted-foreground)]">תאריך</label>
               <input
                 type="date"
                 dir="ltr"
                 value={stage.dueDate}
                 onChange={(e) => update(i, { dueDate: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-start text-sm tabular-nums outline-none focus:border-indigo-500"
+                className="mt-1 w-full rounded-lg border border-[var(--color-border)] px-2 py-1.5 text-start text-sm tabular-nums outline-none focus:border-[var(--color-ring)]"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600">
+              <label className="block text-xs font-medium text-[var(--color-muted-foreground)]">
                 מקור המימון
               </label>
               <div className="mt-1">
@@ -320,12 +320,12 @@ export function PaymentScheduleEditor({
             step={0.5}
           />
 
-          <label className="flex items-center gap-2 text-xs text-slate-600">
+          <label className="flex items-center gap-2 text-xs text-[var(--color-muted-foreground)]">
             <input
               type="checkbox"
               checked={stage.linkedToIndex}
               onChange={(e) => update(i, { linkedToIndex: e.target.checked })}
-              className="size-4 rounded border-slate-300"
+              className="size-4 rounded border-[var(--color-border)]"
             />
             צמוד למדד תשומות הבנייה
           </label>
@@ -336,7 +336,7 @@ export function PaymentScheduleEditor({
         <button
           type="button"
           onClick={addStage}
-          className="rounded-xl border border-dashed border-slate-300 px-4 py-2 text-sm text-slate-600 hover:border-indigo-400 hover:text-indigo-700"
+          className="rounded-xl border border-dashed border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-muted-foreground)] hover:border-[var(--color-ring)] hover:text-[var(--color-primary)]"
         >
           הוסף תשלום
         </button>
@@ -344,8 +344,8 @@ export function PaymentScheduleEditor({
           <div
             className={
               Math.abs(totalPct - 100) < 0.01
-                ? 'text-emerald-700'
-                : 'font-medium text-rose-700'
+                ? 'text-[var(--color-positive)]'
+                : 'font-medium text-[var(--color-destructive)]'
             }
           >
             <span dir="ltr" className="tabular-nums">
@@ -353,7 +353,7 @@ export function PaymentScheduleEditor({
             </span>{' '}
             מתוך 100%
           </div>
-          <div className="text-xs text-slate-500">
+          <div className="text-xs text-[var(--color-muted-foreground)]">
             מזה מהון עצמי:{' '}
             <span dir="ltr" className="tabular-nums">
               {equityPct.toFixed(1)}%
@@ -363,7 +363,7 @@ export function PaymentScheduleEditor({
       </div>
 
       {Math.abs(totalPct - 100) >= 0.01 && (
-        <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-800">
+        <p className="rounded-xl bg-[var(--color-destructive-bg)] px-3 py-2 text-sm text-[var(--color-destructive)]">
           סכום התשלומים חייב להיות בדיוק 100%. כרגע חסרים או עודפים{' '}
           <span dir="ltr" className="tabular-nums">
             {(100 - totalPct).toFixed(1)}%
@@ -381,9 +381,9 @@ export function PaymentScheduleEditor({
         </p>
       )}
 
-      <div className="space-y-2 border-t border-slate-200 pt-3">
+      <div className="space-y-2 border-t border-[var(--color-border)] pt-3">
         <h4 className="text-sm font-medium">מתי משלמים את העלויות הנלוות</h4>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-[var(--color-muted-foreground)]">
           מס רכישה ועו"ד בדרך כלל עם התשלום הראשון. יועץ משכנתאות בדרך כלל סביב
           האכלוס. עלות שלא שויכה משולמת בשלב הראשון.
         </p>
@@ -391,7 +391,7 @@ export function PaymentScheduleEditor({
           <div key={c.key} className="flex items-center justify-between gap-2 text-sm">
             <span className="min-w-0 flex-1 truncate">
               {c.label}{' '}
-              <span dir="ltr" className="tabular-nums text-slate-500">
+              <span dir="ltr" className="tabular-nums text-[var(--color-muted-foreground)]">
                 {formatILS(costAmounts[c.key] ?? 0)}
               </span>
             </span>
@@ -400,7 +400,7 @@ export function PaymentScheduleEditor({
               onChange={(e) =>
                 onStageDatesChange({ ...stageDates, [c.key]: e.target.value })
               }
-              className="shrink-0 rounded-lg border border-slate-300 px-2 py-1.5 text-xs outline-none focus:border-indigo-500"
+              className="shrink-0 rounded-lg border border-[var(--color-border)] px-2 py-1.5 text-xs outline-none focus:border-[var(--color-ring)]"
             >
               <option value="">תשלום ראשון</option>
               {stages.map((s) => (

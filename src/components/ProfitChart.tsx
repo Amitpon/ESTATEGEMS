@@ -70,7 +70,7 @@ export function ProfitChart({
     <section className="space-y-2">
       <div>
         <h3 className="text-base font-semibold">רווח כולל לפי שנת המכירה</h3>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-[var(--color-muted-foreground)]">
           לפי ההנחה שלך של{' '}
           <span dir="ltr" className="tabular-nums">
             {appreciationPct}%
@@ -81,7 +81,7 @@ export function ProfitChart({
       </div>
 
       <div
-        className="relative w-full overflow-hidden rounded-xl border border-slate-200 bg-white"
+        className="relative w-full overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-card)]"
         ref={(el) => {
           if (el && el.clientWidth !== width) setWidth(el.clientWidth)
         }}
@@ -171,8 +171,10 @@ export function ProfitChart({
           />
         </svg>
 
+        {/* Tooltip הפוך בכוונה: רקע בצבע הטקסט וטקסט בצבע הרקע.
+            כך הוא מנוגד לקנבס בשני המצבים, בלי כלל dark נפרד. */}
         {hover && (
-          <div className="pointer-events-none absolute inset-x-2 top-2 rounded-lg bg-slate-900/90 px-3 py-2 text-xs text-white sm:inset-x-auto sm:start-2">
+          <div className="pointer-events-none absolute inset-x-2 top-2 rounded-lg bg-[var(--color-foreground)]/90 px-3 py-2 text-xs text-[var(--color-background)] sm:inset-x-auto sm:start-2">
             <div className="font-semibold">מכירה בשנה {hover.year}</div>
             <div className="mt-1 space-y-0.5">
               <div>
@@ -208,7 +210,7 @@ export function ProfitChart({
         )}
       </div>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-[var(--color-muted-foreground)]">
         הקו חוצה את האפס בנקודה שבה הרווח הכולל מכסה את ההון שהושקע. ציר השנים
         נקרא משמאל לימין.
       </p>
