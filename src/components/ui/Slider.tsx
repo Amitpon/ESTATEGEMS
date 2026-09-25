@@ -42,7 +42,7 @@ export function Slider({
             </label>
           )}
           {valueDisplay && (
-            <span className="text-sm tabular-nums text-[var(--color-primary)] font-semibold">
+            <span className="text-sm tabular-nums text-[var(--color-brand-accent)] font-semibold">
               {valueDisplay}
             </span>
           )}
@@ -66,15 +66,17 @@ export function Slider({
             // track fill - CSS custom property trick
             "focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]",
             "[&::-webkit-slider-thumb]:appearance-none",
-            "[&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5",
+            "[&::-webkit-slider-thumb]:w-[22px] [&::-webkit-slider-thumb]:h-[22px]",
             "[&::-webkit-slider-thumb]:rounded-full",
+            // thumb: primary (sage כהה) עם border לבן - גבולות ברורים
             "[&::-webkit-slider-thumb]:bg-[var(--color-primary)]",
+            "[&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white",
             "[&::-webkit-slider-thumb]:shadow-sm",
             "[&::-webkit-slider-thumb]:cursor-pointer"
           )}
           style={{
-            // fill מימין ב-RTL
-            background: `linear-gradient(to left, var(--color-primary) ${percent}%, var(--color-border) ${percent}%)`,
+            // fill מימין ב-RTL. brand-accent (sage בהיר) על track border (אפרפר).
+            background: `linear-gradient(to left, var(--color-brand-accent) ${percent}%, var(--color-border) ${percent}%)`,
           }}
           {...props}
         />

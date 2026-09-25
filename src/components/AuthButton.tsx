@@ -142,7 +142,7 @@ function AuthButtonInner() {
       <button
         type="button"
         onClick={openModal}
-        className="min-h-[44px] rounded-full bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-[var(--color-primary-foreground)] transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+        className="min-h-[44px] rounded-full bg-[var(--color-cta)] px-4 py-2 text-sm font-semibold text-[var(--color-cta-foreground)] transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
       >
         התחבר
       </button>
@@ -220,7 +220,7 @@ function AuthButtonInner() {
                 className={[
                   'min-h-[36px] flex-1 rounded-lg text-sm font-medium transition',
                   tab === t
-                    ? 'bg-[var(--color-primary)] text-[var(--color-primary-foreground)]'
+                    ? 'bg-[var(--color-brand-accent)] text-white'
                     : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]',
                 ].join(' ')}
               >
@@ -300,7 +300,7 @@ function AuthButtonInner() {
             <button
               type="submit"
               disabled={submitting}
-              className="min-h-[44px] w-full rounded-xl bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-[var(--color-primary-foreground)] transition hover:opacity-90 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+              className="min-h-[44px] w-full rounded-xl bg-[var(--color-cta)] px-4 py-2 text-sm font-semibold text-[var(--color-cta-foreground)] transition hover:opacity-90 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
             >
               {submitting ? 'מתחבר...' : tab === 'login' ? 'כניסה' : 'יצירת חשבון'}
             </button>

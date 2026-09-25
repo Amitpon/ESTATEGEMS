@@ -62,8 +62,8 @@ export function AnalyzePage({ analysis }: { analysis: PropertyAnalysis }) {
               onClick={() => setStep(v)}
               className={
                 step === v
-                  ? 'flex-1 rounded-lg bg-[var(--color-primary)] px-3 py-2 text-sm font-medium text-white'
-                  : 'flex-1 rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-muted-foreground)]'
+                  ? 'flex-1 rounded-lg bg-[var(--color-cta)] px-3 py-2 text-sm font-medium text-[var(--color-cta-foreground)]'
+                  : 'flex-1 rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-muted-foreground)] transition-colors hover:text-[var(--color-foreground)]'
               }
             >
               {label}

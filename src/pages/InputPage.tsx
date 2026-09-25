@@ -79,7 +79,7 @@ export function InputPage({
                   <button
                     type="button"
                     onClick={() => setAnnualRatePct(suggestion.suggestedRatePct)}
-                    className="rounded-md bg-[var(--color-card)] px-2 py-1 font-medium text-[var(--color-primary)] ring-1 ring-[var(--color-border)]"
+                    className="rounded-md bg-[var(--color-card)] px-2 py-1 font-medium text-[var(--color-primary)] ring-1 ring-[var(--color-brand-accent)]"
                   >
                     השתמש ב-{suggestion.suggestedRatePct}%
                   </button>
@@ -114,8 +114,8 @@ export function InputPage({
                 onClick={() => setAmortization(kind)}
                 className={
                   amortization === kind
-                    ? 'rounded-xl border-2 border-[var(--color-primary)] bg-[var(--color-accent)] p-2.5 text-start'
-                    : 'rounded-xl border border-[var(--color-border)] p-2.5 text-start hover:border-[var(--color-ring)]'
+                    ? 'rounded-[var(--radius)] border-2 border-[var(--color-brand-accent)] bg-[var(--color-accent)] p-2.5 text-start'
+                    : 'rounded-[var(--radius)] border border-[var(--color-border)] p-2.5 text-start hover:border-[var(--color-ring)] transition-colors'
                 }
               >
                 <span className="block text-sm font-medium">{title}</span>
@@ -173,10 +173,12 @@ export function InputPage({
         />
       </div>
 
+      {/* CTA כהה מאוד (--color-cta = hsl(160 18% 12%)) - לא sage ירוק.
+          ירוק שמור לחיובי (positive). CTA כהה מונע בלבול. */}
       <button
         type="button"
         onClick={onShowResults}
-        className="w-full rounded-xl bg-[var(--color-primary)] px-4 py-3 text-sm font-semibold text-white sm:hidden"
+        className="w-full rounded-[var(--radius)] bg-[var(--color-cta)] px-4 py-3 text-sm font-semibold text-[var(--color-cta-foreground)] transition-opacity hover:opacity-90 sm:hidden"
       >
         הצג את התוצאות
       </button>

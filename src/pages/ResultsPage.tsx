@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Card } from '@/components/ui/Card'
+import { Card, KpiCard } from '@/components/ui/Card'
+import { MetricGauge } from '@/components/MetricGauge'
 import { Disclosure } from '@/components/ui/Disclosure'
 import { BreakdownRow } from '@/components/BreakdownRow'
 import { ExitPointHero } from '@/components/ExitPointHero'
@@ -81,7 +82,7 @@ export function ResultsPage({
         <button
           type="button"
           onClick={() => printReport()}
-          className="rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] px-4 py-2 text-sm font-medium text-[var(--color-foreground)] hover:border-[var(--color-ring)] hover:text-[var(--color-primary)] transition-colors"
+          className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] px-4 py-2 text-sm font-medium text-[var(--color-foreground)] hover:border-[var(--color-ring)] hover:text-[var(--color-primary)] transition-colors"
         >
           הדפסה או שמירה כ-PDF
         </button>
@@ -106,94 +107,96 @@ export function ResultsPage({
            * בלי משכנתא: 2 מדדים בלבד (כיסוי מוסתר, כפי שמצוין במנוע).
            * הם חשובים מספיק להיות גלויים, אך לא ראשיים כמו בExitPointHero.
            */}
-          <Card className="p-4">
+          {/*
+           * KpiCard: מדדים תומכים עם gauge עגול (בהשראת WaterPod).
+           * 3 מדדים עם משכנתא, 2 בלי. gauge מוחלף בטקסט בהדפסה דרך
+           * [data-gauge-svg] / [data-gauge-text] ב-index.css print rules.
+           * טון כל gauge לפי הספים מ-design-spec.md סעיף 7.
+           */}
+          <KpiCard className="p-4">
             {result.data.cashflow.mortgagePayment.monthly > 0 ? (
-              /* עם משכנתא: שלושה מדדים בגריד. מפריד ויזואלי דרך border-e. ללא gap כי הריווח
-                 מגיע מה-padding סביב הגבול, ולא מ-gap שיצור פער כפול. */
-              <div className="grid grid-cols-3">
-
-                {/* כיסוי ההחזר - המדד שמשקיעים שואלים ראשון */}
-                <div className="border-e border-[var(--color-border)] pe-3">
-                  <div className="text-xs text-[var(--color-muted-foreground)]">כיסוי ההחזר</div>
-                  <div
-                    dir="ltr"
-                    className={`mt-1 text-2xl font-bold tabular-nums leading-none ${
-                      result.data.metrics.mortgageCoveragePct.value >= 100
-                        ? 'text-[var(--color-positive)]'
-                        : 'text-[var(--color-warning)]'
-                    }`}
-                  >
-                    {formatPercentDirect(result.data.metrics.mortgageCoveragePct.value)}
-                  </div>
-                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--color-muted)]">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        result.data.metrics.mortgageCoveragePct.value >= 100
-                          ? 'bg-[var(--color-positive)]'
-                          : 'bg-[var(--color-warning)]'
-                      }`}
-                      style={{
-                        width: `${Math.min(100, Math.max(0, result.data.metrics.mortgageCoveragePct.value))}%`,
-                      }}
-                    />
-                  </div>
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--color-muted-foreground)]">
-                    שכ"ד אחרי אי-אכלוס, חלקי ההחזר
-                  </p>
-                </div>
-
+              /* עם משכנתא: שלושה gauge-מדדים */
+              <div className="grid grid-cols-3 gap-2">
+                {/* כיסוי ההחזר */}
+                <MetricGauge
+                  value={Math.max(0, result.data.metrics.mortgageCoveragePct.value)}
+                  max={150}
+                  label="כיסוי ההחזר"
+                  displayValue={formatPercentDirect(result.data.metrics.mortgageCoveragePct.value)}
+                  tone={result.data.metrics.mortgageCoveragePct.value >= 100 ? 'positive' : 'warning'}
+                  size={88}
+                />
                 {/* תשואה ברוטו */}
-                <div className="border-e border-[var(--color-border)] pe-3 ps-3">
-                  <div className="text-xs text-[var(--color-muted-foreground)]">תשואה ברוטו</div>
-                  <div dir="ltr" className="mt-1 text-2xl font-bold tabular-nums leading-none">
-                    {formatPercentDirect(result.data.metrics.grossYieldPct.value)}
-                  </div>
-                  <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-muted-foreground)]">
-                    שכ"ד שנתי חלקי מחיר הנכס
-                  </p>
-                </div>
-
+                <MetricGauge
+                  value={Math.max(0, result.data.metrics.grossYieldPct.value)}
+                  max={8}
+                  label="תשואה ברוטו"
+                  displayValue={formatPercentDirect(result.data.metrics.grossYieldPct.value)}
+                  tone={
+                    result.data.metrics.grossYieldPct.value >= 4
+                      ? 'positive'
+                      : result.data.metrics.grossYieldPct.value >= 2
+                        ? 'warning'
+                        : 'destructive'
+                  }
+                  size={88}
+                />
                 {/* תשואה על ההון */}
-                <div className="ps-3">
-                  <div className="text-xs text-[var(--color-muted-foreground)]">תשואה על ההון</div>
-                  <div dir="ltr" className="mt-1 text-2xl font-bold tabular-nums leading-none">
-                    {formatPercentDirect(result.data.metrics.cashOnCashPct.value)}
-                  </div>
-                  <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-muted-foreground)]">
-                    תזרים שנתי חלקי הון שהושקע
-                  </p>
-                </div>
+                <MetricGauge
+                  value={Math.max(0, result.data.metrics.cashOnCashPct.value)}
+                  max={8}
+                  label="תשואה על ההון"
+                  displayValue={formatPercentDirect(result.data.metrics.cashOnCashPct.value)}
+                  tone={
+                    result.data.metrics.cashOnCashPct.value >= 3
+                      ? 'positive'
+                      : result.data.metrics.cashOnCashPct.value >= 1
+                        ? 'warning'
+                        : 'destructive'
+                  }
+                  size={88}
+                />
               </div>
             ) : (
-              /* בלי משכנתא: שני מדדים - כיסוי מוסתר לפי הוראת המנוע */
-              <div className="grid grid-cols-2">
-                <div className="border-e border-[var(--color-border)] pe-3">
-                  <div className="text-xs text-[var(--color-muted-foreground)]">תשואה ברוטו</div>
-                  <div dir="ltr" className="mt-1 text-2xl font-bold tabular-nums leading-none">
-                    {formatPercentDirect(result.data.metrics.grossYieldPct.value)}
-                  </div>
-                  <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-muted-foreground)]">
-                    שכ"ד שנתי חלקי מחיר הנכס
-                  </p>
-                </div>
-                <div className="ps-3">
-                  <div className="text-xs text-[var(--color-muted-foreground)]">תשואה על ההון</div>
-                  <div dir="ltr" className="mt-1 text-2xl font-bold tabular-nums leading-none">
-                    {formatPercentDirect(result.data.metrics.cashOnCashPct.value)}
-                  </div>
-                  <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-muted-foreground)]">
-                    תזרים שנתי חלקי הון שהושקע
-                  </p>
-                </div>
+              /* בלי משכנתא: שני gauge-מדדים */
+              <div className="grid grid-cols-2 gap-2">
+                <MetricGauge
+                  value={Math.max(0, result.data.metrics.grossYieldPct.value)}
+                  max={8}
+                  label="תשואה ברוטו"
+                  displayValue={formatPercentDirect(result.data.metrics.grossYieldPct.value)}
+                  tone={
+                    result.data.metrics.grossYieldPct.value >= 4
+                      ? 'positive'
+                      : result.data.metrics.grossYieldPct.value >= 2
+                        ? 'warning'
+                        : 'destructive'
+                  }
+                  size={96}
+                />
+                <MetricGauge
+                  value={Math.max(0, result.data.metrics.cashOnCashPct.value)}
+                  max={8}
+                  label="תשואה על ההון"
+                  displayValue={formatPercentDirect(result.data.metrics.cashOnCashPct.value)}
+                  tone={
+                    result.data.metrics.cashOnCashPct.value >= 3
+                      ? 'positive'
+                      : result.data.metrics.cashOnCashPct.value >= 1
+                        ? 'warning'
+                        : 'destructive'
+                  }
+                  size={96}
+                />
               </div>
             )}
 
-            {/* הסבר - מאחד את הסברי שתי התשואות מהגרסה הישנה */}
+            {/* הסבר - שתי התשואות מודדות שנה אחת בלבד */}
             <p className="mt-3 border-t border-[var(--color-border)] pt-2.5 text-[11px] leading-relaxed text-[var(--color-muted-foreground)]">
               שתי התשואות מודדות <strong>שנה אחת</strong> ואינן כוללות רווח
               ממכירה. המספרים בראש המסך הם התמונה המלאה, כולל עליית ערך ומס.
             </p>
-          </Card>
+          </KpiCard>
 
           {/* ─── שכבה 3: פירוקים - מאחורי Disclosure ─── */}
 

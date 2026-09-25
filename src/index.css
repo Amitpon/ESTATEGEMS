@@ -2,8 +2,11 @@
 
 /* ─────────────────────────────────────────────
    Design Tokens - Light Mode (ברירת מחדל)
-   כל הצבעים ב-HSL לתאימות עם shadcn pattern.
-   הפלטה לפי design-spec.md סעיף 1.
+   פלטה: sage-ירוק. כחול הוסר לגמרי.
+   --color-primary = sage כהה (טקסט/אייקונים/accent).
+   --color-cta = כהה מאוד (#1a2920) לכפתורים ראשיים בלבד -
+     כדי למנוע בלבול "ירוק=חיובי" מול "ירוק=כפתור".
+   --color-brand-accent = sage בהיר לפסי accent ו-focus rings.
    ───────────────────────────────────────────── */
 @theme {
   /* Fonts */
@@ -39,47 +42,59 @@
   --text-2xl: 2rem;
   --text-3xl: 2.5rem;
 
-  /* ─── Neutral Base ─── */
-  --color-background: hsl(0 0% 97%);
-  --color-foreground: hsl(222 25% 12%);
-  --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(222 25% 12%);
-  --color-popover: hsl(0 0% 100%);
-  --color-popover-foreground: hsl(222 25% 12%);
+  /* ─── Neutral Base - לבן ─── */
+  --color-background:          hsl(0 0% 100%);
+  --color-foreground:          hsl(160 18% 12%);
+  --color-card:                hsl(0 0% 100%);
+  --color-card-foreground:     hsl(160 18% 12%);
+  --color-popover:             hsl(0 0% 100%);
+  --color-popover-foreground:  hsl(160 18% 12%);
 
-  /* ─── Brand Primary - כחול עמוק ─── */
-  /* בחרנו כחול כי ירוק שמור לתזרים חיובי ואדום לשלילי */
-  --color-primary: hsl(231 58% 46%);
-  --color-primary-foreground: hsl(0 0% 100%);
+  /* ─── Brand Primary - sage כהה ─── */
+  /* primary = טקסט, אייקונים, accent. לא לכפתורים ראשיים (ראה --color-cta) */
+  --color-primary:             hsl(152 35% 36%);
+  --color-primary-foreground:  hsl(0 0% 100%);
+
+  /* sage בהיר - accent bars, focus rings, progress fill */
+  --color-brand-accent:        hsl(152 38% 52%);
 
   /* ─── Secondary / Muted ─── */
-  --color-secondary: hsl(220 14% 93%);
-  --color-secondary-foreground: hsl(222 25% 28%);
-  --color-muted: hsl(220 14% 93%);
-  --color-muted-foreground: hsl(220 12% 52%);
-  --color-accent: hsl(220 14% 93%);
-  --color-accent-foreground: hsl(222 25% 28%);
+  --color-secondary:           hsl(150 8% 92%);
+  --color-secondary-foreground:hsl(160 15% 28%);
+  --color-muted:               hsl(150 8% 92%);
+  --color-muted-foreground:    hsl(155 8% 50%);
+  --color-accent:              hsl(150 8% 92%);
+  --color-accent-foreground:   hsl(160 15% 28%);
 
   /* ─── Semantic Colors ─── */
-  /* ירוק: תזרים חיובי, תשואה טובה (>4%) */
-  --color-positive: hsl(142 60% 36%);
-  --color-positive-bg: hsl(142 60% 95%);
-  --color-positive-foreground: hsl(142 60% 36%);
+  /* positive: forest green - שונה במתכוון מ-primary/brand-accent.
+     אסור למזג. badge/אינדיקציה "חיובי" = positive בלבד. */
+  --color-positive:            hsl(142 55% 32%);
+  --color-positive-bg:         hsl(142 55% 94%);
+  --color-positive-foreground: hsl(142 55% 32%);
 
-  /* ענבר: תשואה בינונית (2%-4%) */
-  --color-warning: hsl(34 90% 46%);
-  --color-warning-bg: hsl(34 90% 95%);
-  --color-warning-foreground: hsl(34 90% 46%);
+  --color-warning:             hsl(34 88% 44%);
+  --color-warning-bg:          hsl(34 88% 95%);
+  --color-warning-foreground:  hsl(34 88% 44%);
 
-  /* אדום: תזרים שלילי, תשואה נמוכה (<2%) */
-  --color-destructive: hsl(0 70% 48%);
-  --color-destructive-bg: hsl(0 70% 95%);
+  --color-destructive:         hsl(0 68% 46%);
+  --color-destructive-bg:      hsl(0 68% 95%);
   --color-destructive-foreground: hsl(0 0% 100%);
 
   /* ─── Borders & Inputs ─── */
-  --color-border: hsl(220 14% 88%);
-  --color-input: hsl(220 14% 88%);
-  --color-ring: hsl(231 58% 46%);
+  --color-border:              hsl(150 10% 86%);
+  --color-input:               hsl(150 10% 86%);
+  --color-ring:                hsl(152 38% 52%);
+
+  /* ─── CTA - כפתור ראשי. כהה מאוד, לא sage, למנוע בלבול עם ירוק-חיובי ─── */
+  --color-cta:                 hsl(160 18% 12%);
+  --color-cta-foreground:      hsl(0 0% 100%);
+
+  /* ─── Glass (hero cards, tooltips בלבד. אסור בטבלאות/inputs) ─── */
+  --glass-bg:                  rgba(255, 255, 255, 0.72);
+  --glass-blur:                blur(12px);
+  --glass-border:              rgba(255, 255, 255, 0.60);
+  --glass-shadow:              0 4px 24px rgba(61, 100, 80, 0.10);
 }
 
 /* ─────────────────────────────────────────────
@@ -101,74 +116,91 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
-    --color-background: hsl(222 25% 9%);
-    --color-foreground: hsl(220 14% 92%);
-    --color-card: hsl(222 22% 13%);
-    --color-card-foreground: hsl(220 14% 92%);
-    --color-popover: hsl(222 22% 13%);
-    --color-popover-foreground: hsl(220 14% 92%);
+    --color-background:          hsl(160 15% 8%);
+    --color-foreground:          hsl(150 10% 90%);
+    --color-card:                hsl(158 12% 12%);
+    --color-card-foreground:     hsl(150 10% 90%);
+    --color-popover:             hsl(158 12% 12%);
+    --color-popover-foreground:  hsl(150 10% 90%);
 
-    --color-primary: hsl(231 72% 65%);
-    --color-primary-foreground: hsl(222 25% 9%);
+    --color-primary:             hsl(152 35% 55%);
+    --color-primary-foreground:  hsl(160 15% 8%);
+    --color-brand-accent:        hsl(152 38% 62%);
 
-    --color-secondary: hsl(222 18% 18%);
-    --color-secondary-foreground: hsl(220 14% 75%);
-    --color-muted: hsl(222 18% 18%);
-    --color-muted-foreground: hsl(220 12% 50%);
-    --color-accent: hsl(222 18% 18%);
-    --color-accent-foreground: hsl(220 14% 75%);
+    --color-secondary:           hsl(158 12% 17%);
+    --color-secondary-foreground:hsl(150 8% 72%);
+    --color-muted:               hsl(158 12% 17%);
+    --color-muted-foreground:    hsl(155 6% 48%);
+    --color-accent:              hsl(158 12% 17%);
+    --color-accent-foreground:   hsl(150 8% 72%);
 
-    --color-positive: hsl(142 55% 48%);
-    --color-positive-bg: hsl(142 30% 14%);
-    --color-positive-foreground: hsl(142 55% 48%);
+    --color-positive:            hsl(142 50% 50%);
+    --color-positive-bg:         hsl(142 30% 14%);
+    --color-positive-foreground: hsl(142 50% 50%);
 
-    --color-warning: hsl(34 80% 58%);
-    --color-warning-bg: hsl(34 40% 14%);
-    --color-warning-foreground: hsl(34 80% 58%);
+    --color-warning:             hsl(34 80% 58%);
+    --color-warning-bg:          hsl(34 40% 14%);
+    --color-warning-foreground:  hsl(34 80% 58%);
 
-    --color-destructive: hsl(0 65% 58%);
-    --color-destructive-bg: hsl(0 35% 14%);
+    --color-destructive:         hsl(0 65% 58%);
+    --color-destructive-bg:      hsl(0 35% 14%);
     --color-destructive-foreground: hsl(0 0% 100%);
 
-    --color-border: hsl(222 18% 20%);
-    --color-input: hsl(222 18% 20%);
-    --color-ring: hsl(231 72% 65%);
+    --color-border:              hsl(158 12% 19%);
+    --color-input:               hsl(158 12% 19%);
+    --color-ring:                hsl(152 38% 62%);
+
+    /* CTA הופך בהיר ב-dark לקונטרסט */
+    --color-cta:                 hsl(150 30% 85%);
+    --color-cta-foreground:      hsl(160 18% 12%);
+
+    --glass-bg:                  rgba(19, 35, 22, 0.72);
+    --glass-border:              rgba(255, 255, 255, 0.08);
+    --glass-shadow:              0 4px 24px rgba(0, 0, 0, 0.35);
   }
 }
 
 .dark {
-  --color-background: hsl(222 25% 9%);
-  --color-foreground: hsl(220 14% 92%);
-  --color-card: hsl(222 22% 13%);
-  --color-card-foreground: hsl(220 14% 92%);
-  --color-popover: hsl(222 22% 13%);
-  --color-popover-foreground: hsl(220 14% 92%);
+  --color-background:          hsl(160 15% 8%);
+  --color-foreground:          hsl(150 10% 90%);
+  --color-card:                hsl(158 12% 12%);
+  --color-card-foreground:     hsl(150 10% 90%);
+  --color-popover:             hsl(158 12% 12%);
+  --color-popover-foreground:  hsl(150 10% 90%);
 
-  --color-primary: hsl(231 72% 65%);
-  --color-primary-foreground: hsl(222 25% 9%);
+  --color-primary:             hsl(152 35% 55%);
+  --color-primary-foreground:  hsl(160 15% 8%);
+  --color-brand-accent:        hsl(152 38% 62%);
 
-  --color-secondary: hsl(222 18% 18%);
-  --color-secondary-foreground: hsl(220 14% 75%);
-  --color-muted: hsl(222 18% 18%);
-  --color-muted-foreground: hsl(220 12% 50%);
-  --color-accent: hsl(222 18% 18%);
-  --color-accent-foreground: hsl(220 14% 75%);
+  --color-secondary:           hsl(158 12% 17%);
+  --color-secondary-foreground:hsl(150 8% 72%);
+  --color-muted:               hsl(158 12% 17%);
+  --color-muted-foreground:    hsl(155 6% 48%);
+  --color-accent:              hsl(158 12% 17%);
+  --color-accent-foreground:   hsl(150 8% 72%);
 
-  --color-positive: hsl(142 55% 48%);
-  --color-positive-bg: hsl(142 30% 14%);
-  --color-positive-foreground: hsl(142 55% 48%);
+  --color-positive:            hsl(142 50% 50%);
+  --color-positive-bg:         hsl(142 30% 14%);
+  --color-positive-foreground: hsl(142 50% 50%);
 
-  --color-warning: hsl(34 80% 58%);
-  --color-warning-bg: hsl(34 40% 14%);
-  --color-warning-foreground: hsl(34 80% 58%);
+  --color-warning:             hsl(34 80% 58%);
+  --color-warning-bg:          hsl(34 40% 14%);
+  --color-warning-foreground:  hsl(34 80% 58%);
 
-  --color-destructive: hsl(0 65% 58%);
-  --color-destructive-bg: hsl(0 35% 14%);
+  --color-destructive:         hsl(0 65% 58%);
+  --color-destructive-bg:      hsl(0 35% 14%);
   --color-destructive-foreground: hsl(0 0% 100%);
 
-  --color-border: hsl(222 18% 20%);
-  --color-input: hsl(222 18% 20%);
-  --color-ring: hsl(231 72% 65%);
+  --color-border:              hsl(158 12% 19%);
+  --color-input:               hsl(158 12% 19%);
+  --color-ring:                hsl(152 38% 62%);
+
+  --color-cta:                 hsl(150 30% 85%);
+  --color-cta-foreground:      hsl(160 18% 12%);
+
+  --glass-bg:                  rgba(19, 35, 22, 0.72);
+  --glass-border:              rgba(255, 255, 255, 0.08);
+  --glass-shadow:              0 4px 24px rgba(0, 0, 0, 0.35);
 }
 
 /* ─────────────────────────────────────────────
@@ -206,6 +238,19 @@ body {
 [data-numeric],
 .tabular-nums {
   font-variant-numeric: tabular-nums;
+}
+
+/* ─────────────────────────────────────────────
+   Glass Card - למשתמש רק על: hero sections, KPI cards עיקריים, tooltips.
+   אסור על: טבלאות, inputs, bottom nav, ורכיבים בתוך data-print-report.
+   ───────────────────────────────────────────── */
+.glass-card,
+[data-glass] {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
 }
 
 /* ─────────────────────────────────────────────
@@ -298,6 +343,24 @@ body {
     content: ' (' attr(href) ')';
     font-size: 8pt;
     color: #555;
+  }
+
+  /* glassmorphism מוחלף בלבן נקי בהדפסה. */
+  .glass-card,
+  [data-glass] {
+    background: white !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: 1px solid #d4dbd5 !important;
+    box-shadow: none !important;
+  }
+
+  /* Gauge SVGs מוסתרים, הגרסה הטקסטואלית (print:block) מוצגת. */
+  [data-gauge-svg] {
+    display: none !important;
+  }
+  [data-gauge-text] {
+    display: block !important;
   }
 
   @page {

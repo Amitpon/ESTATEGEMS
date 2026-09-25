@@ -160,7 +160,7 @@ export function ValueInput({
                 className={cn(
                   'min-h-[44px] px-3 py-1 transition-colors',
                   shown === m
-                    ? 'bg-[var(--color-primary)] text-[var(--color-primary-foreground)]'
+                    ? 'bg-[var(--color-brand-accent)] text-white'
                     : 'text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)]',
                 )}
               >
@@ -190,9 +190,9 @@ export function ValueInput({
           value={displayed}
           onChange={(e) => commit(Number(e.target.value))}
           aria-valuetext={valueDisplay ?? `${fmt.format(displayed)}${showingPercent ? '%' : ''}`}
-          className="h-11 min-w-0 flex-1 cursor-pointer appearance-none bg-transparent [&::-webkit-slider-runnable-track]:h-1.5 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-thumb]:mt-[-9px] [&::-webkit-slider-thumb]:size-6 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--color-primary)] [&::-webkit-slider-thumb]:shadow"
+          className="h-11 min-w-0 flex-1 cursor-pointer appearance-none bg-transparent [&::-webkit-slider-runnable-track]:h-1.5 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-thumb]:mt-[-9px] [&::-webkit-slider-thumb]:size-[22px] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--color-primary)] [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow"
           style={{
-            background: `linear-gradient(to left, var(--color-primary) ${fill}%, var(--color-border) ${fill}%)`,
+            background: `linear-gradient(to left, var(--color-brand-accent) ${fill}%, var(--color-border) ${fill}%)`,
             backgroundSize: '100% 6px',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
