@@ -24,6 +24,7 @@
 | נתוני למ"ס (CPI, מחירי דירות, תשומות בנייה) | snapshot, מחובר לבילד | `scripts/fetch-cbs.mjs`, `src/data/cbs-indices.json` |
 | עסקאות govmap - שליפה, ניקוי, תובנות שכונתיות, עוגן בממשק, הקשר לשמשון | עובד, וגם עבר סבב security hardening (ראה 4.2) | `src/services/govmap.ts`, `src/lib/market/`, `src/hooks/useMarketAnchor.ts`, `AddressField.tsx`, `MarketAnchor.tsx` |
 | Appwrite - auth (אימייל+גוגל) ושמירת נכסים בענן | עובד, אומת חי מול Appwrite Cloud אמיתי (curl smoke test, לא רק טסטים). UI לרשימה/השוואה הושלם - ראה 4.1 | `src/services/appwrite.ts`, `src/pages/PropertiesPage.tsx` |
+| עיצוב sage-ירוק + 6 מדדי משקיע כ-hero | הושלם, **רקע/כהות עדיין בבירור עם בעל המוצר** - ראה 4.10 | `src/index.css`, `src/components/InvestorHeadlineMetrics.tsx`, `src/lib/calc/investorMetrics.ts` |
 
 ---
 
@@ -119,6 +120,24 @@
 > **הלקח:** לפני שקוד ממשק מחשב משהו מ-`combinedRows`, לחפש קודם
 > ב-`MortgageResult`/`AnalysisResult` אם השדה כבר קיים מוכן. **שלושת
 > המקומות עדיין לא תוקנו** - משימת ניקיון פתוחה, לא חוסמת עלייה לאוויר.
+
+### `wouter` `component={() => <X/>}` inline גורם ל-remount מלא בכל הקלדה
+
+בעל המוצר דיווח (2026-09-25): "כשמכניסים ערכים לשדות או מזיזים סליידר
+המסך קופץ". דיבאגר אותר: `App.tsx` השתמש ב-`<Route component={() => <AnalyzePage .../>} />` -
+כל שינוי state ב-`App` (שמריץ `usePropertyAnalysis`) יוצר סגירה חדשה
+לפונקציה הזו, ו-wouter מרנדר אותה עם `createElement(component, ...)`.
+פונקציה חדשה = React רואה component type אחר = הורס ובונה מחדש את כל
+עץ ה-`AnalyzePage`, כולל כל ה-state המקומי (אקורדיונים, מיקום גלילה).
+
+**תוקן:** מעבר לתבנית children של wouter - `<Route path="/"><AnalyzePage .../></Route>`.
+React שומר על אותו component type בין רינדורים ורק מעדכן props.
+
+> **הלקח:** `component={() => ...}` inline בתוך `<Route>` (או כל API
+> דומה שמקבל קומפוננטה כ-prop) הוא red flag - הקומפוננטה נוצרת מחדש
+> בכל רינדור של ההורה, והשורש כולו נהרס ונבנה מחדש. אם יש state ב-App
+> שמשתנה תכופות (כל הקלדה) - הבאג היה שם מתחילת הפרויקט, פשוט לא
+> הורגש עד שמשתמש אמיתי הקליד משהו ארוך מספיק.
 
 ---
 
@@ -255,6 +274,53 @@
 מדרג מחדש לכיוון headline-metrics-first (השראה מאתר ייחוס): גריד מדדים
 עיקריים למעלה, פירוט מאחורי `Disclosure`. ראה 2.2 ("חישוב כפול בממשק")
 ל-bug שנמצא תוך כדי, וסעיף RTL ב-`CLAUDE.md` לדפוס גריד ה-`border-e`.
+
+### 4.10 שדרוג עיצובי sage-ירוק + 6 מדדי משקיע כ-hero בלעדי - **הושלם 2026-09-25**
+
+שני פיצ'רים שרצו במקביל דרך agents (`market-researcher` -> `ui-designer`,
+ובמקביל `api-researcher` -> מימוש ישיר):
+
+**עיצוב:** פלטה כחולה-גנרית -> sage-ירוק, בהשראת רפרנסים שסופקו (Nexus
+dashboard, WaterPod glassmorphic UI). הכרעות מפתח: `--color-cta` כהה
+נפרד מ-`--color-primary`/`--color-brand-accent` (סייג') ומ-`--color-positive`
+(forest green) - כדי שכפתור ראשי, brand color, וסמנטיקה "חיובי" לא
+יתערבבו ל"ירוק = טוב תמיד". `MetricGauge.tsx` (SVG gauge עגול) נוסף
+ל-3 מדדי תשואה, עם fallback טקסטואלי בהדפסה (`[data-gauge-svg]`/`[data-gauge-text]`
+ב-`index.css`). **עודכן שוב באותו יום** לפי משוב נוסף: רקע חזר ללבן
+טהור (לא השמנת-ירקרק שהוצע), וכל אלמנט צבעוני (CTA, accent bars,
+badges, gauge fills) הוקל לגוון בהיר יותר עם שקיפות (`hsl(... / 0.88-0.92)`).
+
+**ידוע ופתוח, נדחה במפורש לפעם אחרת (2026-09-25):** בעל המוצר עדיין
+תופס את הרקע כ"ירוק מדי, לא לבן מספיק", ואת האתר בכלל כ"כהה מדי" -
+למרות ש-`--color-background` הוא `hsl(0 0% 100%)` (לבן טהור) ברמת
+ה-token. כדאי לבדוק בסבב הבא: האם זה תפיסה סובייקטיבית מול ה-sage
+המצטבר מכל ה-accent-ים (borders, badges, gauge tracks), effet אופטי
+של הרבה ירוק קטן שנצבר לתחושת "ירוק כללי" - או שיש עדיין `--color-*`
+token ספציפי שלא הוחלף. לא לנחש - לשאול את בעל המוצר על צילום מסך
+קונקרטי לפני שמשנים שוב.
+
+**6 מדדי המשקיע:** בעל המוצר ביקש (2026-09-25) שישה מדדים בסדר קבוע -
+הון עצמי, משכורת ברוטו נדרשת, גודל משכנתא, תזרים חודשי נטו, ושתי
+תשואות (שנתית ממוצעת + כוללת ל-10 שנים) מול S&P 500. ארבעה מתוך
+השישה כבר היו קיימים במנוע ורק חוברו (`InvestorHeadlineMetricsInput`
+ב-`src/lib/calc/investorMetrics.ts`); חדשים: משכורת נדרשת (יחס החזר
+להכנסה הפוך, קבוע `DEFAULT_MAX_PAYMENT_TO_INCOME_RATIO_PCT` גלוי
+וניתן לעריכה - לא הנחה נסתרת), והשוואת S&P 500 (`src/data/benchmarks.ts`,
+14.8% שנתי, עשור 2016-2025, מקור Fidelity מאומת מול FRED). **חשוב:**
+בעל המוצר ביקש במפורש (משוב תוך כדי) שההשוואה תציג את **הנתון של
+S&P עצמו** לאותה תקופה, לא רק הפרש בנקודות אחוז - "זה לא נותן כלום"
+לדבריו. `Sp500ReferenceLine` ב-`InvestorHeadlineMetrics.tsx` מציג
+`sp500AverageAnnualReturnPct`/`sp500TotalReturnPct` ישירות.
+
+**ריבוד מסך התוצאות שונה שוב** (משוב נוסף, אותה שיחה): בעל המוצר
+ביקש ש-6 המדדים יהיו ה-**hero הבלעדי**, וכל השאר (`ExitPointHero`,
+הגאוג'ים המשניים, תרחישי עליית ערך, תובנות, לוח סילוקין - כולל "רווח
+בכל נקודת מכירה" שהיה עם `defaultOpen`) ייסגר מאחורי `Disclosure`
+שנפתח רק ביוזמת המשתמש. זה שינוי היררכיה שלישי לאותו מסך באותו יום -
+ראה 4.9 למקור, וסימן שה-headline-metrics מ-4.9 לא היה מספיק בולט.
+
+אומת: `tsc --noEmit` נקי, 185/185 טסטים עוברים (כולל 17 חדשים ל-
+investor metrics), `npm run build` - 141.99kB gzip (יעד 174kB).
 
 ---
 
