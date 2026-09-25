@@ -134,13 +134,13 @@ describe('ResultsPage', () => {
       expect(cashflowDetails?.open).toBe(false)
     })
 
-    it('סקשן "רווח בכל נקודת מכירה" פתוח כברירת מחדל, לפי defaultOpen', () => {
+    it('סקשן "רווח בכל נקודת מכירה" סגור כברירת מחדל - כל דבר חוץ מ-6 המדדים נפתח רק ביוזמת המשתמש', () => {
       const analysis = makeAnalysis(baseInput())
       render(<ResultsPage analysis={analysis} panel={basePanel} />)
 
       const saleDetails = screen.getByText('רווח בכל נקודת מכירה').closest('details')
       expect(saleDetails).not.toBeNull()
-      expect(saleDetails?.open).toBe(true)
+      expect(saleDetails?.open).toBe(false)
     })
   })
 })
