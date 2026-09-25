@@ -84,7 +84,7 @@ export function ShimshonChat({ context }: Props) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-5 end-5 z-50 flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-[var(--color-primary)] focus:outline-none focus-visible:ring-4 focus-visible:ring-[var(--color-ring)]"
+        className="fixed bottom-5 end-5 z-50 flex items-center gap-2 rounded-full bg-[var(--color-cta)] px-5 py-3 text-sm font-semibold text-[var(--color-cta-foreground)] shadow-lg transition hover:opacity-90 focus:outline-none focus-visible:ring-4 focus-visible:ring-[var(--color-ring)]"
         style={{ bottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))' }}
         data-no-print
       >
@@ -175,7 +175,7 @@ export function ShimshonChat({ context }: Props) {
           <button
             type="submit"
             disabled={streaming || !draft.trim() || !context}
-            className="rounded-xl bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-primary)] disabled:opacity-40"
+            className="rounded-xl bg-[var(--color-cta)] px-4 py-2 text-sm font-semibold text-[var(--color-cta-foreground)] transition hover:opacity-90 disabled:opacity-40"
           >
             {streaming ? '...' : 'שלח'}
           </button>

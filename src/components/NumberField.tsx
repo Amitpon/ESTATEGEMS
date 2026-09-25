@@ -17,7 +17,8 @@ export function NumberField({
   return (
     <label className="block">
       <span className="block text-sm font-medium text-[var(--color-foreground)]">{label}</span>
-      <span className="mt-1 flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] px-3 focus-within:border-[var(--color-ring)] focus-within:ring-2 focus-within:ring-[var(--color-ring)]">
+      {/* height 48px - דרישת מגע (Apple HIG / WCAG 2.5.5). text-end = יישור לצד ה-end (שמאל ב-RTL). */}
+      <span className="mt-1 flex h-12 items-center gap-2 rounded-[var(--radius)] border border-[var(--color-input)] bg-[var(--color-card)] px-3 transition-colors focus-within:border-[var(--color-ring)] focus-within:ring-2 focus-within:ring-[var(--color-ring)]/20">
         <input
           type="number"
           inputMode="decimal"
@@ -25,7 +26,7 @@ export function NumberField({
           value={Number.isFinite(value) ? value : ''}
           onChange={(e) => onChange(Number(e.target.value))}
           dir="ltr"
-          className="min-h-11 w-full bg-transparent text-start text-base tabular-nums outline-none"
+          className="min-h-full w-full bg-transparent text-start text-base tabular-nums outline-none"
         />
         {suffix ? <span className="shrink-0 text-sm text-[var(--color-muted-foreground)]">{suffix}</span> : null}
       </span>

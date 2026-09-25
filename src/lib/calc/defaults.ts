@@ -67,6 +67,12 @@ export const DEFAULT_ORIGINS: Readonly<Record<string, DefaultOrigin>> = {
     source: RENTAL_MARGINAL_DEFAULT_PCT.source,
     verified: RENTAL_MARGINAL_DEFAULT_PCT.verified,
   },
+  maxPaymentToIncomeRatioPct: {
+    label: 'יחס החזר להכנסה מקסימלי',
+    source:
+      'נוהג בנקאי מקובל בישראל - עד כשליש מההכנסה הפנויה להחזר משכנתא. לא אומת מול הנחיית בנק ישראל ספציפית - כל בנק קובע בפועל בעצמו. ערך פתיחה בלבד.',
+    verified: false,
+  },
 };
 
 /** שיעור אי-אכלוס ברירת מחדל - חודש אחד בשנה. */
@@ -83,6 +89,13 @@ export const DEFAULT_LTV_PCT = 50;
 
 /** עמלת פירעון מוקדם ברירת מחדל. */
 export const DEFAULT_EARLY_REPAYMENT_FEE_PCT = 0;
+
+/**
+ * יחס החזר להכנסה מקסימלי - כמה מהמשכורת הברוטו מותר להקדיש להחזר משכנתא,
+ * לפי תנאי הסף הבנקאיים המקובלים. ערך פתיחה גלוי וניתן לעריכה (עיקרון 3) -
+ * הבנקים בפועל נעים סביב שליש, אבל לא קיים קבוע רגולטורי אחיד.
+ */
+export const DEFAULT_MAX_PAYMENT_TO_INCOME_RATIO_PCT = 33;
 
 /** שכר טרחת עורך דין כאחוז ממחיר הנכס - אמצע הטווח 0.5-1.5. */
 export const DEFAULT_LAWYER_FEE_PCT = 1;

@@ -10,6 +10,8 @@ import type { Assumptions, IsoDate, PropertyInput } from '@/types/property';
 import { buildSaleSchedule, type DeductibleLine, type SaleAtYear } from './capital-gains';
 import { buildCapitalTimeline, singleDateTimeline, type CapitalTimeline } from './capital-timeline';
 import { calcCashflow, type CashflowInput, type CashflowResult } from './cashflow';
+import { DEFAULT_MAX_PAYMENT_TO_INCOME_RATIO_PCT } from './defaults';
+import { buildInvestorHeadlineMetrics, type InvestorHeadlineMetricsResult } from './investorMetrics';
 import { calcMetrics, calcUpfrontEquity, solveBreakEvenRent, type MetricsResult, type UpfrontEquityResult } from './metrics';
 import { buildMortgage, type MortgageResult } from './mortgage';
 import { CalcInputError } from './money';
@@ -23,6 +25,7 @@ export * from './capital-gains';
 export * from './capital-timeline';
 export * from './cashflow';
 export * from './defaults';
+export * from './investorMetrics';
 export * from './metrics';
 export * from './money';
 export * from './mortgage';
@@ -57,6 +60,12 @@ export interface AnalysisResult {
   readonly saleSchedule: readonly SaleAtYear[];
   /** ציר הזמן של ההון העצמי - מתי כל שקל יצא מהכיס. */
   readonly capitalTimeline: CapitalTimeline;
+  /**
+   * 6 מדדי המשקיע המרכזיים, בסדר שקבע בעל המוצר (2026-09-21).
+   * עטיפה בלבד סביב שדות שכבר קיימים למעלה, ועוד שני מדדים חדשים
+   * (משכורת ברוטו נדרשת, השוואה ל-S&P 500) - ראה investorMetrics.ts.
+   */
+  readonly investorMetrics: InvestorHeadlineMetricsResult;
 }
 
 /**
@@ -96,8 +105,14 @@ function resolveFinancing(price: number, financing: PropertyInput['financing']) 
  *
  * @param input הקלט של המשתמש.
  * @param assumptions ההנחות שלו להרצה קדימה. עיקרון 1 - אלה הנחות, לא תחזית.
+ * @param maxPaymentToIncomeRatioPct יחס החזר להכנסה מקסימלי, לחישוב המשכורת
+ *   הברוטו הנדרשת. ערך פתיחה גלוי וניתן לעריכה (עיקרון 3) - ראה defaults.ts.
  */
-export function analyze(input: PropertyInput, assumptions: Assumptions): AnalysisResult {
+export function analyze(
+  input: PropertyInput,
+  assumptions: Assumptions,
+  maxPaymentToIncomeRatioPct: number = DEFAULT_MAX_PAYMENT_TO_INCOME_RATIO_PCT,
+): AnalysisResult {
   const { price, sizeSqm } = input.property;
 
   const { downPayment, loanAmount, ltvPct } = resolveFinancing(price, input.financing);
@@ -245,6 +260,16 @@ export function analyze(input: PropertyInput, assumptions: Assumptions): Analysi
     ),
   });
 
+  const investorMetrics = buildInvestorHeadlineMetrics({
+    upfrontEquityTotal: equity.total,
+    loanAmount: mortgage.loanAmount,
+    monthlyMortgagePayment: mortgage.firstMonthlyPayment,
+    netMonthlyCashflow: cashflow.netCashflow.monthly,
+    saleSchedule,
+    horizonYears: assumptions.horizonYears,
+    maxPaymentToIncomeRatioPct,
+  });
+
   return {
     downPayment,
     loanAmount,
@@ -258,6 +283,7 @@ export function analyze(input: PropertyInput, assumptions: Assumptions): Analysi
     scenarios,
     saleSchedule,
     capitalTimeline,
+    investorMetrics,
     ...(paymentSchedule ? { paymentSchedule } : {}),
   };
 }

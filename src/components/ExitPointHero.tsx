@@ -98,7 +98,9 @@ export function ExitPointHero({
   const reason = exit ? REASON_TEXT[exit.reason] : null
 
   return (
-    <Card className="p-4 sm:p-6">
+    // glass-card: hero section - מותר פה לפי כללי glassmorphism.
+    // data-glass עבור override ה-print ב-index.css.
+    <Card data-glass className="glass-card p-4 sm:p-6">
       {/*
        * גריד: 2 עמודות במובייל.
        * התזרים = col-span-2 (מלא) ברוחב, שני המדדים האחרים זה לצד זה מתחתיו.

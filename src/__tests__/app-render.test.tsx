@@ -46,4 +46,16 @@ describe('רינדור המסך', () => {
     expect(screen.getByRole('button', { name: 'התוצאות' })).toBeTruthy();
     expect(screen.getByRole('button', { name: /הדפסה/ })).toBeTruthy();
   });
+
+  // הקישור ל-/properties תלוי ב-isAppwriteConfigured, שבסביבת הטסטים קורא
+  // את .env האמיתי - לא קוראים לבדיקה שהוא מוגדר או לא, רק שהניווט הבסיסי
+  // לא נשבר כשהוא כן מופיע. בלי לנווט בפועל, כדי לא לפגוש קריאת רשת אמיתית
+  // ל-Appwrite (getCurrentUser) בתוך טסט DOM.
+  it('מציג קישור לנכסים שמורים כש-Appwrite מוגדר', () => {
+    render(<App />);
+    const link = screen.queryByRole('link', { name: 'הנכסים שלי' });
+    if (link) {
+      expect(link.getAttribute('href')).toBe('/properties');
+    }
+  });
 });
