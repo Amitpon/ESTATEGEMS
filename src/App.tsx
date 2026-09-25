@@ -16,9 +16,15 @@ export default function App() {
 
   return (
     <Switch>
-      <Route path="/properties" component={() => <PropertiesPage analysis={analysis} />} />
-      <Route path="/" component={() => <AnalyzePage analysis={analysis} />} />
-      <Route component={() => <AnalyzePage analysis={analysis} />} />
+      <Route path="/properties">
+        <PropertiesPage analysis={analysis} />
+      </Route>
+      <Route path="/">
+        <AnalyzePage analysis={analysis} />
+      </Route>
+      <Route>
+        <AnalyzePage analysis={analysis} />
+      </Route>
     </Switch>
   )
 }

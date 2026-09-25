@@ -19,6 +19,30 @@ const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
     />
   )
 );
+
+/**
+ * KpiCard - כרטיס מדד KPI.
+ * border-inline-start: 3px sage accent (בהשראת Nexus dashboard).
+ * רדיוס גדול יותר (radius-lg) לביזוריות מודגשת.
+ * מבנה מומלץ: label קטן muted למעלה -> מספר גדול bold -> context chip.
+ */
+const KpiCard = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn(
+        "rounded-[var(--radius-lg)] border border-[var(--color-border)]",
+        "bg-[var(--color-card)] text-[var(--color-card-foreground)]",
+        "shadow-[0_1px_3px_rgba(0,0,0,0.06)]",
+        // accent bar בצד ה-start (ימין ב-RTL) - זיהוי מהיר כ-KPI
+        "border-s-[3px] border-s-[var(--color-brand-accent)]",
+        className
+      )}
+      {...props}
+    />
+  )
+);
+KpiCard.displayName = "KpiCard";
 Card.displayName = "Card";
 
 const CardHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
@@ -82,6 +106,7 @@ CardFooter.displayName = "CardFooter";
 
 export {
   Card,
+  KpiCard,
   CardHeader,
   CardTitle,
   CardDescription,

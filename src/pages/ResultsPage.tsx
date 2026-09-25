@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Card } from '@/components/ui/Card'
+import { Card, KpiCard } from '@/components/ui/Card'
+import { MetricGauge } from '@/components/MetricGauge'
 import { Disclosure } from '@/components/ui/Disclosure'
 import { BreakdownRow } from '@/components/BreakdownRow'
 import { ExitPointHero } from '@/components/ExitPointHero'
+import { InvestorHeadlineMetrics } from '@/components/InvestorHeadlineMetrics'
 import { ReportInsights } from '@/components/ReportInsights'
 import { CashflowTimeline } from '@/components/CashflowTimeline'
 import { AmortizationTable } from '@/components/AmortizationTable'
@@ -81,7 +83,7 @@ export function ResultsPage({
         <button
           type="button"
           onClick={() => printReport()}
-          className="rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] px-4 py-2 text-sm font-medium text-[var(--color-foreground)] hover:border-[var(--color-ring)] hover:text-[var(--color-primary)] transition-colors"
+          className="rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-card)] px-4 py-2 text-sm font-medium text-[var(--color-foreground)] hover:border-[var(--color-ring)] hover:text-[var(--color-primary)] transition-colors"
         >
           הדפסה או שמירה כ-PDF
         </button>
@@ -93,109 +95,122 @@ export function ResultsPage({
         </Card>
       ) : (
         <>
-          {/* ─── שכבה 1: מדדים ראשיים - גדולים ומיידיים ─── */}
-          <ExitPointHero
-            monthlyCashflow={result.data.metrics.netMonthlyCashflow.value}
-            exit={findKeyExitPoint(result.data.saleSchedule)}
-          />
-
-          {/* ─── שכבה 2: מדדים תומכים - גלויים, לא מקופלים ─── */}
           {/*
-           * SecondaryMetrics: מחליף את הכרטיס הנפרד לכיסוי ואת ה-details הגולמי
-           * לתשואות. כשיש משכנתא: 3 מדדים (כיסוי, ברוטו, על ההון).
-           * בלי משכנתא: 2 מדדים בלבד (כיסוי מוסתר, כפי שמצוין במנוע).
-           * הם חשובים מספיק להיות גלויים, אך לא ראשיים כמו בExitPointHero.
+           * ─── שכבה 0: 6 מדדי המשקיע המרכזיים - הדבר הראשון שרואים ───
+           * בעל המוצר ביקש שאלה יופיעו ראשונים, מעל ExitPointHero.
            */}
-          <Card className="p-4">
-            {result.data.cashflow.mortgagePayment.monthly > 0 ? (
-              /* עם משכנתא: שלושה מדדים בגריד. מפריד ויזואלי דרך border-e. ללא gap כי הריווח
-                 מגיע מה-padding סביב הגבול, ולא מ-gap שיצור פער כפול. */
-              <div className="grid grid-cols-3">
+          <InvestorHeadlineMetrics analysis={result.data} />
 
-                {/* כיסוי ההחזר - המדד שמשקיעים שואלים ראשון */}
-                <div className="border-e border-[var(--color-border)] pe-3">
-                  <div className="text-xs text-[var(--color-muted-foreground)]">כיסוי ההחזר</div>
-                  <div
-                    dir="ltr"
-                    className={`mt-1 text-2xl font-bold tabular-nums leading-none ${
-                      result.data.metrics.mortgageCoveragePct.value >= 100
-                        ? 'text-[var(--color-positive)]'
-                        : 'text-[var(--color-warning)]'
-                    }`}
-                  >
-                    {formatPercentDirect(result.data.metrics.mortgageCoveragePct.value)}
-                  </div>
-                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--color-muted)]">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        result.data.metrics.mortgageCoveragePct.value >= 100
-                          ? 'bg-[var(--color-positive)]'
-                          : 'bg-[var(--color-warning)]'
-                      }`}
-                      style={{
-                        width: `${Math.min(100, Math.max(0, result.data.metrics.mortgageCoveragePct.value))}%`,
-                      }}
+          {/*
+           * ─── שכבה 1: כל השאר - מאחורי Disclosure, נפתח רק אם המשתמש רוצה ───
+           * בעל המוצר הכריע (2026-09-25): 6 המדדים למעלה הם ה-hero הבלעדי.
+           * ExitPointHero וגאוג'ים משניים כפולים חלקית למדדים 4-6 למעלה,
+           * ולכן עברו לכאן כפירוט נוסף ולא כשכבה גלויה נפרדת.
+           */}
+          <Disclosure
+            title="נקודת המכירה האופטימלית וכיסוי/תשואה שנתית"
+            summary="תזרים, כיסוי החזר ותשואות שנה בודדת"
+          >
+            <div className="space-y-3">
+              <ExitPointHero
+                monthlyCashflow={result.data.metrics.netMonthlyCashflow.value}
+                exit={findKeyExitPoint(result.data.saleSchedule)}
+              />
+
+              {/*
+               * KpiCard: מדדים תומכים עם gauge עגול (בהשראת WaterPod).
+               * 3 מדדים עם משכנתא, 2 בלי. gauge מוחלף בטקסט בהדפסה דרך
+               * [data-gauge-svg] / [data-gauge-text] ב-index.css print rules.
+               * טון כל gauge לפי הספים מ-design-spec.md סעיף 7.
+               */}
+              <KpiCard className="p-4">
+                {result.data.cashflow.mortgagePayment.monthly > 0 ? (
+                  /* עם משכנתא: שלושה gauge-מדדים */
+                  <div className="grid grid-cols-3 gap-2">
+                    {/* כיסוי ההחזר */}
+                    <MetricGauge
+                      value={Math.max(0, result.data.metrics.mortgageCoveragePct.value)}
+                      max={150}
+                      label="כיסוי ההחזר"
+                      displayValue={formatPercentDirect(result.data.metrics.mortgageCoveragePct.value)}
+                      tone={result.data.metrics.mortgageCoveragePct.value >= 100 ? 'positive' : 'warning'}
+                      size={88}
+                    />
+                    {/* תשואה ברוטו */}
+                    <MetricGauge
+                      value={Math.max(0, result.data.metrics.grossYieldPct.value)}
+                      max={8}
+                      label="תשואה ברוטו"
+                      displayValue={formatPercentDirect(result.data.metrics.grossYieldPct.value)}
+                      tone={
+                        result.data.metrics.grossYieldPct.value >= 4
+                          ? 'positive'
+                          : result.data.metrics.grossYieldPct.value >= 2
+                            ? 'warning'
+                            : 'destructive'
+                      }
+                      size={88}
+                    />
+                    {/* תשואה על ההון */}
+                    <MetricGauge
+                      value={Math.max(0, result.data.metrics.cashOnCashPct.value)}
+                      max={8}
+                      label="תשואה על ההון"
+                      displayValue={formatPercentDirect(result.data.metrics.cashOnCashPct.value)}
+                      tone={
+                        result.data.metrics.cashOnCashPct.value >= 3
+                          ? 'positive'
+                          : result.data.metrics.cashOnCashPct.value >= 1
+                            ? 'warning'
+                            : 'destructive'
+                      }
+                      size={88}
                     />
                   </div>
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--color-muted-foreground)]">
-                    שכ"ד אחרי אי-אכלוס, חלקי ההחזר
-                  </p>
-                </div>
-
-                {/* תשואה ברוטו */}
-                <div className="border-e border-[var(--color-border)] pe-3 ps-3">
-                  <div className="text-xs text-[var(--color-muted-foreground)]">תשואה ברוטו</div>
-                  <div dir="ltr" className="mt-1 text-2xl font-bold tabular-nums leading-none">
-                    {formatPercentDirect(result.data.metrics.grossYieldPct.value)}
+                ) : (
+                  /* בלי משכנתא: שני gauge-מדדים */
+                  <div className="grid grid-cols-2 gap-2">
+                    <MetricGauge
+                      value={Math.max(0, result.data.metrics.grossYieldPct.value)}
+                      max={8}
+                      label="תשואה ברוטו"
+                      displayValue={formatPercentDirect(result.data.metrics.grossYieldPct.value)}
+                      tone={
+                        result.data.metrics.grossYieldPct.value >= 4
+                          ? 'positive'
+                          : result.data.metrics.grossYieldPct.value >= 2
+                            ? 'warning'
+                            : 'destructive'
+                      }
+                      size={96}
+                    />
+                    <MetricGauge
+                      value={Math.max(0, result.data.metrics.cashOnCashPct.value)}
+                      max={8}
+                      label="תשואה על ההון"
+                      displayValue={formatPercentDirect(result.data.metrics.cashOnCashPct.value)}
+                      tone={
+                        result.data.metrics.cashOnCashPct.value >= 3
+                          ? 'positive'
+                          : result.data.metrics.cashOnCashPct.value >= 1
+                            ? 'warning'
+                            : 'destructive'
+                      }
+                      size={96}
+                    />
                   </div>
-                  <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-muted-foreground)]">
-                    שכ"ד שנתי חלקי מחיר הנכס
-                  </p>
-                </div>
+                )}
 
-                {/* תשואה על ההון */}
-                <div className="ps-3">
-                  <div className="text-xs text-[var(--color-muted-foreground)]">תשואה על ההון</div>
-                  <div dir="ltr" className="mt-1 text-2xl font-bold tabular-nums leading-none">
-                    {formatPercentDirect(result.data.metrics.cashOnCashPct.value)}
-                  </div>
-                  <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-muted-foreground)]">
-                    תזרים שנתי חלקי הון שהושקע
-                  </p>
-                </div>
-              </div>
-            ) : (
-              /* בלי משכנתא: שני מדדים - כיסוי מוסתר לפי הוראת המנוע */
-              <div className="grid grid-cols-2">
-                <div className="border-e border-[var(--color-border)] pe-3">
-                  <div className="text-xs text-[var(--color-muted-foreground)]">תשואה ברוטו</div>
-                  <div dir="ltr" className="mt-1 text-2xl font-bold tabular-nums leading-none">
-                    {formatPercentDirect(result.data.metrics.grossYieldPct.value)}
-                  </div>
-                  <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-muted-foreground)]">
-                    שכ"ד שנתי חלקי מחיר הנכס
-                  </p>
-                </div>
-                <div className="ps-3">
-                  <div className="text-xs text-[var(--color-muted-foreground)]">תשואה על ההון</div>
-                  <div dir="ltr" className="mt-1 text-2xl font-bold tabular-nums leading-none">
-                    {formatPercentDirect(result.data.metrics.cashOnCashPct.value)}
-                  </div>
-                  <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-muted-foreground)]">
-                    תזרים שנתי חלקי הון שהושקע
-                  </p>
-                </div>
-              </div>
-            )}
+                {/* הסבר - שתי התשואות מודדות שנה אחת בלבד */}
+                <p className="mt-3 border-t border-[var(--color-border)] pt-2.5 text-[11px] leading-relaxed text-[var(--color-muted-foreground)]">
+                  שתי התשואות מודדות <strong>שנה אחת</strong> ואינן כוללות רווח
+                  ממכירה. 6 המדדים למעלה הם התמונה המלאה, כולל עליית ערך ומס.
+                </p>
+              </KpiCard>
+            </div>
+          </Disclosure>
 
-            {/* הסבר - מאחד את הסברי שתי התשואות מהגרסה הישנה */}
-            <p className="mt-3 border-t border-[var(--color-border)] pt-2.5 text-[11px] leading-relaxed text-[var(--color-muted-foreground)]">
-              שתי התשואות מודדות <strong>שנה אחת</strong> ואינן כוללות רווח
-              ממכירה. המספרים בראש המסך הם התמונה המלאה, כולל עליית ערך ומס.
-            </p>
-          </Card>
-
-          {/* ─── שכבה 3: פירוקים - מאחורי Disclosure ─── */}
+          {/* ─── שכבה 2: פירוקים - מאחורי Disclosure ─── */}
 
           {/*
            * פירוק ההון - "כמה כסף ביום 1".
@@ -246,42 +261,44 @@ export function ResultsPage({
             <RateSensitivityTable input={result.input} assumptions={result.assumptions} />
           </Disclosure>
 
-          {/* ─── שכבה 4: הנחות סצנריו - גלויות, לא קריטיות ─── */}
           {/*
-           * הרצת הסצנריו מוצגת גלויה כי היא מייצגת את טווח ההנחות של המשתמש
-           * ומזכירה שהמספרים תלויים בהנחה. עיקרון 1: כל מספר עתידי מוצג עם הנחתו.
+           * ─── שכבה 3: הנחות סצנריו - מאחורי Disclosure ───
+           * עיקרון 1: כל מספר עתידי מוצג עם הנחתו - זה נשמר בפנים, רק הפתיחה
+           * הפכה מרצון (לא נדחפת על המשתמש כשכבה גלויה).
            */}
-          <Card className="p-4">
-            <h2 className="text-sm font-semibold text-[var(--color-foreground)]">
-              שווי הנכס לפי שלושה תרחישי עליית ערך
-            </h2>
-            <p className="mt-1 text-xs text-[var(--color-muted-foreground)]">
-              הרצה של ההנחות שהזנת - לא תחזית.
-            </p>
-            <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-              {[result.data.scenarios.low, result.data.scenarios.central, result.data.scenarios.high].map((s) => (
-                <div key={s.key} className="rounded-xl bg-[var(--color-muted)] p-3">
-                  <div className="text-[11px] text-[var(--color-muted-foreground)]">{s.label}</div>
-                  <div dir="ltr" className="mt-1 text-sm font-semibold tabular-nums">
-                    {formatCompactILS(s.endPropertyValue)}
+          <Disclosure
+            title="שווי הנכס לפי שלושה תרחישי עליית ערך"
+            summary="הרצה של ההנחות שהזנת"
+          >
+            <div className="p-4">
+              <p className="text-xs text-[var(--color-muted-foreground)]">
+                הרצה של ההנחות שהזנת - לא תחזית.
+              </p>
+              <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                {[result.data.scenarios.low, result.data.scenarios.central, result.data.scenarios.high].map((s) => (
+                  <div key={s.key} className="rounded-xl bg-[var(--color-muted)] p-3">
+                    <div className="text-[11px] text-[var(--color-muted-foreground)]">{s.label}</div>
+                    <div dir="ltr" className="mt-1 text-sm font-semibold tabular-nums">
+                      {formatCompactILS(s.endPropertyValue)}
+                    </div>
+                    <div dir="ltr" className="mt-0.5 text-[11px] tabular-nums text-[var(--color-muted-foreground)]">
+                      {s.assumedGrowthPct}%
+                    </div>
                   </div>
-                  <div dir="ltr" className="mt-0.5 text-[11px] tabular-nums text-[var(--color-muted-foreground)]">
-                    {s.assumedGrowthPct}%
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
+              <p className="mt-3 text-[11px] leading-relaxed text-[var(--color-muted-foreground)]">
+                {result.data.scenarios.disclaimer}
+              </p>
             </div>
-            <p className="mt-3 text-[11px] leading-relaxed text-[var(--color-muted-foreground)]">
-              {result.data.scenarios.disclaimer}
-            </p>
-          </Card>
+          </Disclosure>
 
-          {/* תובנות - מסכמות את הממצאים הבולטים מהחישוב */}
-          <div className="mt-1">
+          {/* תובנות - מסכמות את הממצאים הבולטים מהחישוב, מאחורי Disclosure */}
+          <Disclosure title="מה ראוי לשים לב אליו" summary="תובנות מהחישוב">
             <ReportInsights analysis={result.data} />
-          </div>
+          </Disclosure>
 
-          {/* ─── שכבה 5: טבלאות ארוכות - תמיד מאחורי Disclosure ─── */}
+          {/* ─── שכבה 4: טבלאות ארוכות - תמיד מאחורי Disclosure ─── */}
 
           <Disclosure
             title="מתי משלמים ומה"
@@ -302,7 +319,7 @@ export function ResultsPage({
             <AmortizationTable analysis={result.data} />
           </Disclosure>
 
-          <Disclosure title="רווח בכל נקודת מכירה" defaultOpen>
+          <Disclosure title="רווח בכל נקודת מכירה" summary="כל שנה בנפרד">
             <SaleSchedule analysis={result.data} />
           </Disclosure>
         </>

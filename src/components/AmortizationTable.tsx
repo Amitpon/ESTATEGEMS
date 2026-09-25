@@ -112,7 +112,7 @@ export function AmortizationTable({ analysis }: { analysis: AnalysisResult }) {
               className={[
                 'min-h-[44px] px-4 py-2 transition-colors',
                 unit === u
-                  ? 'bg-[var(--color-primary)] text-[var(--color-primary-foreground)]'
+                  ? 'bg-[var(--color-brand-accent)] text-white'
                   : 'text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)]',
               ].join(' ')}
             >
@@ -138,10 +138,12 @@ export function AmortizationTable({ analysis }: { analysis: AnalysisResult }) {
         </Card>
       </div>
 
-      {/* טבלה - overflow-x-auto לתאימות מובייל */}
+      {/* טבלה - overflow-x-auto לתאימות מובייל. ללא glassmorphism.
+          שורות לסירוגין: odd = white, even = hsl(150 6% 98%) עדין.
+          sticky header: תמיד ידוע מה העמודה גם בגלילה. */}
       <Card className="overflow-x-auto p-0">
         <table className="w-full min-w-[34rem] text-sm">
-          <thead className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs text-[var(--color-muted-foreground)]">
+          <thead className="sticky top-0 border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs text-[var(--color-muted-foreground)]">
             <tr>
               <th className="p-2 text-start font-medium">תקופה</th>
               <th className="p-2 text-start font-medium">החזר</th>
@@ -150,12 +152,15 @@ export function AmortizationTable({ analysis }: { analysis: AnalysisResult }) {
               <th className="p-2 text-start font-medium">יתרה</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[var(--color-border)]">
-            {visible.map((r) => {
+          <tbody>
+            {visible.map((r, idx) => {
               // חלק הריבית מההחזר. זו התובנה שהטבלה קיימת בשבילה.
               const interestShare = r.payment > 0 ? (r.interest / r.payment) * 100 : 0
               return (
-                <tr key={r.label}>
+                <tr
+                  key={r.label}
+                  className={idx % 2 === 0 ? 'bg-white' : 'bg-[hsl(150_6%_98%)]'}
+                >
                   <td className="p-2 font-medium">{r.label}</td>
                   <td dir="ltr" className="p-2 text-start tabular-nums">
                     {formatCompactILS(r.payment)}
