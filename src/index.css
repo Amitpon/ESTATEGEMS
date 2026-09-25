@@ -50,13 +50,15 @@
   --color-popover:             hsl(0 0% 100%);
   --color-popover-foreground:  hsl(160 18% 12%);
 
-  /* ─── Brand Primary - sage כהה ─── */
+  /* ─── Brand Primary - sage, מוקל (2026-09-25: "כל אלמנט צבעוני יותר בהיר,
+     עם מעט שקיפות" - בקשה מפורשת של בעל המוצר) ─── */
   /* primary = טקסט, אייקונים, accent. לא לכפתורים ראשיים (ראה --color-cta) */
-  --color-primary:             hsl(152 35% 36%);
+  --color-primary:             hsl(152 32% 44%);
   --color-primary-foreground:  hsl(0 0% 100%);
 
-  /* sage בהיר - accent bars, focus rings, progress fill */
-  --color-brand-accent:        hsl(152 38% 52%);
+  /* sage בהיר - accent bars, focus rings, progress fill, badge bg. עם alpha
+     כדי שהוא ישקוף מעט את מה שמתחתיו (כרטיסים, gauge track) */
+  --color-brand-accent:        hsl(152 42% 62% / 0.88);
 
   /* ─── Secondary / Muted ─── */
   --color-secondary:           hsl(150 8% 92%);
@@ -68,26 +70,28 @@
 
   /* ─── Semantic Colors ─── */
   /* positive: forest green - שונה במתכוון מ-primary/brand-accent.
-     אסור למזג. badge/אינדיקציה "חיובי" = positive בלבד. */
-  --color-positive:            hsl(142 55% 32%);
-  --color-positive-bg:         hsl(142 55% 94%);
-  --color-positive-foreground: hsl(142 55% 32%);
+     אסור למזג. badge/אינדיקציה "חיובי" = positive בלבד.
+     מוקל מעט אבל נשאר קריא כ"חיובי" - זה סמנטי, לא דקורטיבי. */
+  --color-positive:            hsl(142 48% 40% / 0.92);
+  --color-positive-bg:         hsl(142 55% 94% / 0.85);
+  --color-positive-foreground: hsl(142 48% 40%);
 
-  --color-warning:             hsl(34 88% 44%);
-  --color-warning-bg:          hsl(34 88% 95%);
-  --color-warning-foreground:  hsl(34 88% 44%);
+  --color-warning:             hsl(34 80% 52% / 0.92);
+  --color-warning-bg:          hsl(34 88% 95% / 0.85);
+  --color-warning-foreground:  hsl(34 80% 52%);
 
-  --color-destructive:         hsl(0 68% 46%);
-  --color-destructive-bg:      hsl(0 68% 95%);
+  --color-destructive:         hsl(0 62% 54% / 0.92);
+  --color-destructive-bg:      hsl(0 68% 95% / 0.85);
   --color-destructive-foreground: hsl(0 0% 100%);
 
   /* ─── Borders & Inputs ─── */
   --color-border:              hsl(150 10% 86%);
   --color-input:               hsl(150 10% 86%);
-  --color-ring:                hsl(152 38% 52%);
+  --color-ring:                hsl(152 42% 62% / 0.88);
 
-  /* ─── CTA - כפתור ראשי. כהה מאוד, לא sage, למנוע בלבול עם ירוק-חיובי ─── */
-  --color-cta:                 hsl(160 18% 12%);
+  /* ─── CTA - כפתור ראשי. מוקל מ"כהה מאוד" לגוון sage-אפרפר עם שקיפות קלה,
+     עדיין נפרד מירוק-חיובי כדי לא ליצור בלבול, אבל פחות קיצוני. ─── */
+  --color-cta:                 hsl(158 22% 30% / 0.9);
   --color-cta-foreground:      hsl(0 0% 100%);
 
   /* ─── Glass (hero cards, tooltips בלבד. אסור בטבלאות/inputs) ─── */
